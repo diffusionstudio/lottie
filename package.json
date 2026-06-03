@@ -1,0 +1,34 @@
+{
+  "name": "lottie-experiments",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "postinstall": "node scripts/copy-canvaskit.mjs"
+  },
+  "dependencies": {
+    "canvaskit-wasm": "^0.39.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.468.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^2.6.0"
+  },
+  "devDependencies": {
+    "@radix-ui/react-slider": "^1.2.2",
+    "@radix-ui/react-slot": "^1.1.1",
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/node": "^22.19.19",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.0.0",
+    "tw-animate-css": "^1.2.5",
+    "typescript": "~5.7.2",
+    "vite": "^6.0.7"
+  }
+}

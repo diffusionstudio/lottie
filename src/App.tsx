@@ -22,9 +22,45 @@ async function loadControlsMeta(): Promise<Record<string, ControlMeta>> {
   }
 }
 
+/**
+ * Writes the panel's current slot values into a copy of the original Lottie
+ * JSON and triggers a download. Slot definitions live under the top-level
+ * `slots` map keyed by sid; scalar/color/vec2 values sit at `p.k`, text at
+ * `p.p.t` (see the write-lottie skill).
+ */
+function downloadConfiguredLottie(
+  lottieJson: string,
+  slots: AnimationSlot[],
+  values: Record<string, AnimationSlot["value"]>
+) {
+  const doc = JSON.parse(lottieJson) as {
+    slots?: Record<string, { p?: { k?: unknown; p?: { t?: string } } }>;
+  };
+
+  for (const slot of slots) {
+    const def = doc.slots?.[slot.id]?.p;
+    if (!def) continue;
+    const value = values[slot.id] ?? slot.value;
+    if (slot.type === "text") {
+      if (def.p) def.p.t = value as string;
+    } else {
+      def.k = value;
+    }
+  }
+
+  const blob = new Blob([JSON.stringify(doc)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "lottie.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const playerRef = useRef<LottiePlayer | null>(null);
+  const lottieJsonRef = useRef<string>("");
 
   const [playing, setPlaying] = useState(false);
   const [currentFrame, setCurrentFrame] = useState(0);
@@ -49,6 +85,7 @@ export default function App() {
         }
         const [json, meta] = await Promise.all([res.text(), loadControlsMeta()]);
         if (disposed) return;
+        lottieJsonRef.current = json;
 
         const player = await LottiePlayer.create(canvas, json, {
           onFrame: (frame, total) => {
@@ -112,6 +149,9 @@ export default function App() {
             onColor={(id, rgba) => playerRef.current?.setColorSlot(id, rgba)}
             onVec2={(id, xy) => playerRef.current?.setVec2Slot(id, xy)}
             onText={(id, v) => playerRef.current?.setTextSlot(id, v)}
+            onExport={(values) =>
+              downloadConfiguredLottie(lottieJsonRef.current, slots, values)
+            }
           />
         </div>
       </div>

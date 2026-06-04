@@ -22,6 +22,8 @@ export interface PropertiesPanelProps {
   onColor: (id: string, rgba: [number, number, number, number]) => void;
   onVec2: (id: string, xy: [number, number]) => void;
   onText: (id: string, value: string) => void;
+  /** Download the animation with the panel's current values applied. */
+  onExport: (values: Record<string, AnimationSlot["value"]>) => void;
 }
 
 function labelFor(slot: AnimationSlot, meta?: ControlMeta): string {
@@ -58,6 +60,7 @@ export function PropertiesPanel({
   onColor,
   onVec2,
   onText,
+  onExport,
 }: PropertiesPanelProps) {
   // The slot's own value (from the player) is the baseline; we only track the
   // user's edits here, falling back to the baseline for anything untouched.
@@ -80,7 +83,10 @@ export function PropertiesPanel({
           <span className="text-xs font-medium tracking-wide text-foreground">
             Properties
           </span>
-          <Button className="text-xs h-7 px-2.5 rounded-md">
+          <Button
+            className="text-xs h-7 px-2.5 rounded-md"
+            onClick={() => onExport(values)}
+          >
             Export
           </Button>
         </div>

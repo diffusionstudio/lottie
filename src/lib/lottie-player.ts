@@ -20,7 +20,7 @@ export function loadCanvasKit(): Promise<CanvasKit> {
 }
 
 // How aggressively a wheel/pinch gesture changes zoom.
-const ZOOM_SENSITIVITY = 0.0015;
+const ZOOM_SENSITIVITY = 0.003;
 
 /** A property the animation has marked as slottable, with its current value. */
 export type AnimationSlot =

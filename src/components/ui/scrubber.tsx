@@ -151,7 +151,7 @@ export function Scrubber({
         aria-valuemax={max}
         aria-valuemin={min}
         aria-valuenow={Number(value.toFixed(decimals))}
-        className="relative cursor-pointer overflow-hidden bg-accent/70 outline-offset-2"
+        className="relative cursor-pointer overflow-hidden bg-accent/70 outline-offset-2 rounded-md h-[34px]"
         onKeyDown={handleKeyDown}
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
@@ -160,18 +160,13 @@ export function Scrubber({
         onPointerUp={handlePointerUp}
         ref={trackRef}
         role="slider"
-        style={{
-          height: 34,
-          borderRadius: 8,
-          touchAction: "none",
-        }}
+        style={{ touchAction: "none" }}
         tabIndex={0}
       >
         {/* Fill indicator */}
         <div
-          className="pointer-events-none absolute inset-y-0 left-0 bg-foreground/10"
+          className="pointer-events-none absolute inset-y-0 left-0 bg-foreground/10 rounded-md"
           style={{
-            borderRadius: 8,
             width: `${percentage}%`,
             transition: isDragging
               ? "none"

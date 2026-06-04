@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Scrubber } from "@/components/ui/scrubber";
 import type { AnimationSlot } from "@/lib/lottie-player";
+import { Button } from "./ui/button";
 
 /** Presentation metadata for a slot, loaded from /controls.json. */
 export interface ControlMeta {
@@ -66,107 +67,127 @@ export function PropertiesPanel({
   );
 
   return (
-    <Card className="pointer-events-auto w-72 gap-0 py-4 backdrop-blur-md bg-neutral-900/90 border border-border/5 shadow-lg">
-      <CardContent className="flex flex-col gap-5">
-        <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Properties
+    <Card className="pointer-events-auto w-72 gap-0 py-3 backdrop-blur-md bg-neutral-900/90 border border-border/5 shadow-lg">
+      <CardContent className="flex flex-col gap-5 px-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium tracking-wide text-foreground">
+            Properties
+          </span>
+          <Button className="text-xs h-7 px-2.5 rounded-md">
+            Export
+          </Button>
         </div>
 
-        {slots.map((slot) => {
-          const m = meta[slot.id];
-          const label = labelFor(slot, m);
+        <div className="flex flex-col gap-3">
+          {slots.map((slot) => {
+            const m = meta[slot.id];
+            const label = labelFor(slot, m);
 
-          if (slot.type === "scalar") {
-            const value = values[slot.id] as number;
-            const min = m?.min ?? 0;
-            const max = m?.max ?? 100;
-            const step = m?.step ?? ((max - min) / 100 || 1);
-            // Show enough decimals to reflect the step (e.g. 0.01 → 2).
-            const decimals = Math.min(
-              4,
-              Math.max(0, -Math.floor(Math.log10(step)))
-            );
-            return (
-              <Scrubber
-                key={slot.id}
-                label={label}
-                value={value}
-                min={min}
-                max={max}
-                step={step}
-                decimals={decimals}
-                onValueChange={(v) => {
-                  set(slot.id, v);
-                  onScalar(slot.id, v);
-                }}
-              />
-            );
-          }
-
-          if (slot.type === "color") {
-            const value = values[slot.id] as [number, number, number, number];
-            return (
-              <div key={slot.id} className="flex items-center justify-between gap-2">
-                <span className="text-sm">{label}</span>
-                <input
-                  type="color"
-                  value={rgbToHex(value)}
-                  onChange={(e) => {
-                    const [r, g, b] = hexToRgb(e.target.value);
-                    const rgba: [number, number, number, number] = [r, g, b, value[3]];
-                    set(slot.id, rgba);
-                    onColor(slot.id, rgba);
+            if (slot.type === "scalar") {
+              const value = values[slot.id] as number;
+              const min = m?.min ?? 0;
+              const max = m?.max ?? 100;
+              const step = m?.step ?? ((max - min) / 100 || 1);
+              // Show enough decimals to reflect the step (e.g. 0.01 → 2).
+              const decimals = Math.min(
+                4,
+                Math.max(0, -Math.floor(Math.log10(step)))
+              );
+              return (
+                <Scrubber
+                  key={slot.id}
+                  label={label}
+                  value={value}
+                  min={min}
+                  max={max}
+                  step={step}
+                  decimals={decimals}
+                  onValueChange={(v) => {
+                    set(slot.id, v);
+                    onScalar(slot.id, v);
                   }}
-                  className="h-8 w-12 cursor-pointer rounded-md border border-input bg-transparent"
+                />
+              );
+            }
+
+            if (slot.type === "color") {
+              const value = values[slot.id] as [number, number, number, number];
+              const hex = rgbToHex(value);
+              // Mirror the Scrubber's shell: a 34px rounded track with the
+              // swatch occupying a square at the left edge and the label beside
+              // it. The native color picker is overlaid transparently on the
+              // swatch so the whole square stays clickable.
+              return (
+                <label
+                  key={slot.id}
+                  className="relative flex h-[34px] cursor-pointer select-none items-center overflow-hidden rounded-md bg-accent/70 pl-[6px]"
+                >
+                  <span
+                    className="relative size-6 shrink-0 rounded-[4px]"
+                    style={{ backgroundColor: hex }}
+                  >
+                    <input
+                      type="color"
+                      value={hex}
+                      onChange={(e) => {
+                        const [r, g, b] = hexToRgb(e.target.value);
+                        const rgba: [number, number, number, number] = [r, g, b, value[3]];
+                        set(slot.id, rgba);
+                        onColor(slot.id, rgba);
+                      }}
+                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                      aria-label={label}
+                    />
+                  </span>
+                  <span className="px-3 text-xs text-foreground">{label}</span>
+                </label>
+              );
+            }
+
+            if (slot.type === "vec2") {
+              const value = values[slot.id] as [number, number];
+              const update = (i: 0 | 1, n: number) => {
+                const next: [number, number] = i === 0 ? [n, value[1]] : [value[0], n];
+                set(slot.id, next);
+                onVec2(slot.id, next);
+              };
+              return (
+                <div key={slot.id} className="flex flex-col gap-2">
+                  <span className="text-sm">{label}</span>
+                  <div className="flex gap-2">
+                    {([0, 1] as const).map((i) => (
+                      <Input
+                        key={i}
+                        type="number"
+                        step={m?.step ?? 1}
+                        value={value[i]}
+                        onChange={(e) => update(i, Number(e.target.value))}
+                        aria-label={`${label} ${i === 0 ? "x" : "y"}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+
+            // text
+            const value = values[slot.id] as string;
+            return (
+              <div key={slot.id} className="flex flex-col gap-2">
+                <span className="text-sm">{label}</span>
+                <Input
+                  type="text"
+                  value={value}
+                  onChange={(e) => {
+                    set(slot.id, e.target.value);
+                    onText(slot.id, e.target.value);
+                  }}
                   aria-label={label}
                 />
               </div>
             );
-          }
-
-          if (slot.type === "vec2") {
-            const value = values[slot.id] as [number, number];
-            const update = (i: 0 | 1, n: number) => {
-              const next: [number, number] = i === 0 ? [n, value[1]] : [value[0], n];
-              set(slot.id, next);
-              onVec2(slot.id, next);
-            };
-            return (
-              <div key={slot.id} className="flex flex-col gap-2">
-                <span className="text-sm">{label}</span>
-                <div className="flex gap-2">
-                  {([0, 1] as const).map((i) => (
-                    <Input
-                      key={i}
-                      type="number"
-                      step={m?.step ?? 1}
-                      value={value[i]}
-                      onChange={(e) => update(i, Number(e.target.value))}
-                      aria-label={`${label} ${i === 0 ? "x" : "y"}`}
-                    />
-                  ))}
-                </div>
-              </div>
-            );
-          }
-
-          // text
-          const value = values[slot.id] as string;
-          return (
-            <div key={slot.id} className="flex flex-col gap-2">
-              <span className="text-sm">{label}</span>
-              <Input
-                type="text"
-                value={value}
-                onChange={(e) => {
-                  set(slot.id, e.target.value);
-                  onText(slot.id, e.target.value);
-                }}
-                aria-label={label}
-              />
-            </div>
-          );
-        })}
+          })}
+        </div>
       </CardContent>
     </Card>
   );

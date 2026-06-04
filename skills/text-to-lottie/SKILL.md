@@ -1,5 +1,5 @@
 ---
-name: write-lottie
+name: text-to-lottie
 description: Author a Lottie (Bodymovin) JSON animation that renders correctly in this Skia/Skottie player. Use whenever the user asks to create, generate, edit, or fix a Lottie animation in this project, or asks for "an animation" to load in the app. Covers the required JSON shape, the Skottie-specific gotchas that cause blank renders, the keyframe/easing format, and where to write the file so the running app hot-reloads it.
 ---
 
@@ -9,6 +9,21 @@ This app renders Lottie with **Skia's Skottie** module (via `canvaskit-wasm`),
 not the JS `lottie-web` runtime. Skottie is stricter: several structures that
 `lottie-web` tolerates render **blank** in Skottie. Follow the rules below and
 verify the result.
+
+## Setting up the project
+
+If you don't already have the player project on this machine, scaffold a fresh
+copy with **degit** (grabs the repo as a clean starting point, no git history):
+
+```bash
+npx degit diffusionstudio/lottie my-animation
+cd my-animation
+npm install   # postinstall copies the CanvasKit wasm into /public
+npm run dev
+```
+
+Then open the printed local URL. If you already have the project, just
+`npm install && npm run dev`.
 
 ## Where to write the file (and how it loads)
 

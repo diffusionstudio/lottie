@@ -1,19 +1,18 @@
 ---
 name: text-to-lottie
-description: Author a Lottie (Bodymovin) JSON animation that renders correctly in this Skia/Skottie player. Use whenever the user asks to create, generate, edit, or fix a Lottie animation in this project, or asks for "an animation" to load in the app. Covers the required JSON shape, the Skottie-specific gotchas that cause blank renders, the keyframe/easing format, and where to write the file so the running app hot-reloads it.
+description: Author a Lottie (Bodymovin) JSON animation that renders in a local skia player. Use whenever the user asks to create, generate, edit, or fix a Lottie animation, or asks for "an animation" to load.
 ---
 
 # Writing a renderable Lottie for this project
 
 This app renders Lottie with **Skia's Skottie** module (via `canvaskit-wasm`),
-not the JS `lottie-web` runtime. Skottie is stricter: several structures that
-`lottie-web` tolerates render **blank** in Skottie. Follow the rules below and
+not the JS `lottie-web` runtime. Follow the rules below and
 verify the result.
 
 ## Setting up the project
 
 If you don't already have the player project on this machine, scaffold a fresh
-copy with **degit** (grabs the repo as a clean starting point, no git history):
+copy with **degit**:
 
 ```bash
 npx degit diffusionstudio/lottie my-animation
@@ -34,8 +33,7 @@ Then open the printed local URL. If you already have the project, just
   and **full-reloads the page on save**, so your edit appears immediately. No
   other wiring is required.
 - If parsing fails, the app shows the error on screen ("CanvasKit could not
-  parse the Lottie file."). A blank canvas with no error means it parsed but
-  drew nothing — almost always one of the gotchas below.
+  parse the Lottie file.").
 
 ## Required top-level shape
 
@@ -168,42 +166,6 @@ easing handles `i`/`o`:
   (out); for linear use `x:[0], y:[0]` / `x:[1], y:[1]`. Multi-dimensional
   values may use per-axis arrays.
 - To **loop seamlessly**, make the last keyframe's value equal the first.
-
-## Minimal known-good example (a bouncing ball)
-
-Use this as a starting skeleton — it parses and renders in this player:
-
-```json
-{
-  "v": "5.7.0", "fr": 60, "ip": 0, "op": 90, "w": 512, "h": 512, "assets": [],
-  "layers": [
-    {
-      "ty": 4, "nm": "ball", "ip": 0, "op": 90, "st": 0,
-      "ks": {
-        "o": { "a": 0, "k": 100 },
-        "r": { "a": 0, "k": 0 },
-        "a": { "a": 0, "k": [0, 0, 0] },
-        "s": { "a": 0, "k": [100, 100, 100] },
-        "p": { "a": 1, "k": [
-          { "t": 0,  "s": [256, 140, 0], "i": { "x": [0.5], "y": [1] }, "o": { "x": [0.7], "y": [0] } },
-          { "t": 45, "s": [256, 380, 0], "i": { "x": [0.3], "y": [1] }, "o": { "x": [0.5], "y": [0] } },
-          { "t": 90, "s": [256, 140, 0] }
-        ] }
-      },
-      "shapes": [
-        {
-          "ty": "gr", "nm": "ball-group",
-          "it": [
-            { "ty": "el", "p": { "a": 0, "k": [0, 0] }, "s": { "a": 0, "k": [120, 120] } },
-            { "ty": "fl", "c": { "a": 0, "k": [0.231, 0.6, 1, 1] }, "o": { "a": 0, "k": 100 } },
-            { "ty": "tr", "p": { "a": 0, "k": [0, 0] }, "a": { "a": 0, "k": [0, 0] }, "s": { "a": 0, "k": [100, 100] }, "r": { "a": 0, "k": 0 }, "o": { "a": 0, "k": 100 } }
-          ]
-        }
-      ]
-    }
-  ]
-}
-```
 
 ## Exposing editable properties (slots + the properties panel)
 

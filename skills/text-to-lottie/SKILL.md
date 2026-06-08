@@ -3,7 +3,7 @@ name: text-to-lottie
 description: Author a Lottie (Bodymovin) JSON animation that renders in a local skia player. Use whenever the user asks to create, generate, edit, or fix a Lottie animation, or asks for "an animation" to load.
 ---
 
-# Writing a renderable Lottie for this project
+# Authoring Renderable Lottie Files
 
 This app renders Lottie with **Skia's Skottie** module (via `canvaskit-wasm`),
 not the JS `lottie-web` runtime. Follow the rules below and

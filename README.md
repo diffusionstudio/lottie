@@ -1,37 +1,124 @@
 <p align="center">
-  <img src="text-to-lottie.gif" alt="Text to Lottie" width="100%" />
+  <img src="assets/header.gif" alt="Text to Lottie" width="100%" />
 </p>
 
-# Text-To-Lottie
+[![](https://img.shields.io/discord/1115673443141156924?style=flat&logo=discord&logoColor=white&color=5865F2)](https://discord.com/invite/zPQJrNGuFB)
+[![](https://img.shields.io/badge/Follow%20for-Updates-black?logo=x&logoColor=white)](https://x.com/diffusionhq)
+[![](https://img.shields.io/badge/Combinator-F24-orange?logo=ycombinator&logoColor=white)](https://www.ycombinator.com/companies/diffusion-studio)
 
-This project includes a full-screen Lottie player built on **Skia CanvasKit (Skottie)**, with a
-React + shadcn/ui + TypeScript control surface. Built to **generate a Lottie
-animation with an LLM and watch it play live**: the agent writes
-`public/lottie.json`, the dev server hot-reloads it.
+**Text-to-lottie** is an open-source harness for generating production ready Lottie animations with claude code/codex or any other coding agent supporting skills.
 
-## Usage 
+## Created with Text-to-Lottie
+<table>
+  <tr>
+    <td>
+      <img src="assets/demo-1.gif" width="400" />
+    </td>
+    <td>
+      <img src="assets/demo-2.gif" width="400" />
+    </td>
+  </tr>
+</table>
 
-Run
+## Quick Start 
+Install the skill:
 ```bash
 npx skills add diffusionstudio/lottie
 ```
+Then ask your coding agent to generate a Lottie animation using `text-to-lottie`.
 
-Then ask claude code/codex or any other agent supporting skills to generate an animation using `text-to-lottie`
+Example prompt:
+> Create a Lottie animation from the SVG path in https://github.com/JaceThings/SF-Hello/blob/main/SVG/hello-en.svg. Reveal the path with an animation that follows the natural path direction. Apply a premium apple themed gradient to the path. Use ease-in-out timing, a transparent background, and preserve the original SVG geometry.
 
-## Getting started
+The agent will setup a harness and can inspect/edit the generated lottie in the with the included player.
 
-Alternatively you can set up the repository manually
+## Prompt guide
 
-```bash
-npm install   # also copies the CanvasKit wasm into /public (postinstall)
-npm run dev
+### 1. Ground the model
+Provide SVGs, real-world data, or screenshots whenever possible. Results are significantly better when the animation is based on concrete assets.
+
+### 2. Use motion design terminology
+Describe timing and movement using motion design language like ease-in, ease-out, and ease-in-out.
+
+### 3. Think like a camera operator
+Professional motion graphics often rely on camera movement. Include camera pushes, pans, zooms, and rig-like motion in your prompt. The agent can simulate these through group transforms.
+
+### 4. Request the controls you need
+By default, outputs usually only expose a background color control. If you want to customize other properties, explicitly ask the agent to create controls for them.
+
+### 5. Specify FPS and duration
+If your animation requires a specific frame rate or length, include the desired FPS and total frame count in the prompt.
+
+
+## Using the Generated Animation
+
+Generated animations can be used directly as Lottie JSON files or imported into After Effects for further refinement.
+
+### Web / vanilla HTML
+```html
+<script src="https://unpkg.com/lottie-web/build/player/lottie.min.js"></script>
+
+<div id="anim"></div>
+
+<script>
+  lottie.loadAnimation({
+    container: document.getElementById("anim"),
+    renderer: "svg",
+    loop: true,
+    autoplay: true,
+    path: "/animations/my-animation.json"
+  });
+</script>
 ```
 
-Then open the printed local URL.
+### React Native
+```bash
+npm install lottie-react-native
+``` 
 
-## CanvasKit wasm
+```typescript
+import LottieView from "lottie-react-native";
 
-The wasm binary is **not** committed; it is copied from
-`node_modules/canvaskit-wasm/bin/full/canvaskit.wasm` into `public/` by
-[`scripts/copy-canvaskit.mjs`](scripts/copy-canvaskit.mjs) on `postinstall`. Run
-it manually any time with `node scripts/copy-canvaskit.mjs`.
+export default function Loader() {
+  return (
+    <LottieView
+      source={require("./animation.json")}
+      autoPlay
+      loop
+      style={{ width: 200, height: 200 }}
+    />
+  );
+}
+```
+
+### iOS Swift
+```swift
+import Lottie
+
+let animationView = LottieAnimationView(name: "animation")
+animationView.frame = view.bounds
+animationView.contentMode = .scaleAspectFit
+animationView.loopMode = .loop
+view.addSubview(animationView)
+animationView.play()
+```
+
+### Android Kotlin
+```kotlin
+val view = findViewById<LottieAnimationView>(R.id.animationView)
+view.setAnimation(R.raw.animation)
+view.loop(true)
+view.playAnimation()
+```
+
+### Flutter
+```yaml
+dependencies:
+  lottie: ^latest
+```
+
+```dart
+import 'package:lottie/lottie.dart';
+
+Lottie.asset('assets/animation.json')
+```

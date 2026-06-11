@@ -87,6 +87,27 @@ export default function Loader() {
 }
 ```
 
+Alternatively, [React Native Skia](https://shopify.github.io/react-native-skia/docs/skottie/) can also render Lottie animations via its Skottie module, including on the web. It lets you customize animation properties, assets, and typographies at runtime, and since `Skottie` is a regular Skia drawing, it can be composed into a larger Skia scene alongside shaders, effects, and masks.
+
+```typescript
+import { Skia, Canvas, Skottie, useClock } from "@shopify/react-native-skia";
+import { useDerivedValue } from "react-native-reanimated";
+
+const animation = Skia.Skottie.Make(JSON.stringify(require("./animation.json")));
+
+export default function Loader() {
+  const clock = useClock();
+  const frame = useDerivedValue(
+    () => ((clock.value / 1000) % animation.duration()) * animation.fps()
+  );
+  return (
+    <Canvas style={{ width: 200, height: 200 }}>
+      <Skottie animation={animation} frame={frame} />
+    </Canvas>
+  );
+}
+```
+
 ### iOS Swift
 ```swift
 import Lottie

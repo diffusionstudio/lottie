@@ -9,11 +9,11 @@ export function SidebarLeft() {
   const navigate = useNavigate();
   const { projects } = useScenes();
   const [creating, setCreating] = createSignal(false);
-  const [name, setName] = createSignal("");
+  const [name, setName] = createSignal("New project");
 
   const handleBlur = () => {
     setCreating(false);
-    setName("");
+    setName("New project");
   }
 
   const handleKeyDown = async (e: KeyboardEvent) => {
@@ -36,6 +36,13 @@ export function SidebarLeft() {
         navigate(`/${project}/${scene}`);
       }
     }
+  }
+
+  const handleInputMounted = (el: HTMLInputElement) => {
+    queueMicrotask(() => {
+      el.focus();
+      el.select();
+    });
   }
 
   return (
@@ -65,10 +72,9 @@ export function SidebarLeft() {
           <div class="flex items-center h-7 rounded-md px-0.5 gap-0.5 my-0.5 text-foreground">
             <Icon name="folder" />
             <input
-              ref={(el) => queueMicrotask(() => el.focus())}
+              ref={handleInputMounted}
               type="text"
               value={name()}
-              placeholder="Animation name"
               onInput={(e) => setName(e.currentTarget.value)}
               onKeyDown={handleKeyDown}
               onBlur={handleBlur}

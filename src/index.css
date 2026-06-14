@@ -44,6 +44,8 @@
   --color-foreground: var(--foreground);
   --color-background: var(--background);
   --color-canvas: var(--canvas);
+  --color-selection: var(--selection);
+  --color-selection-foreground: var(--selection-foreground);
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
@@ -87,6 +89,8 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --selection: hsla(207, 99%, 22%, 1);
+  --selection-foreground: hsla(207, 100%, 90%, 1);
 }
 
 .dark {
@@ -122,6 +126,8 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --selection: hsla(207, 99%, 22%, 1);
+  --selection-foreground: hsla(207, 100%, 90%, 1);
 }
 
 @layer base {
@@ -139,6 +145,11 @@
 
   .z-font-heading {
     @apply font-heading;
+  }
+
+  ::selection {
+    background-color: var(--color-selection);
+    color: var(--color-selection-foreground);
   }
 }
 

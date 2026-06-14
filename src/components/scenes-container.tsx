@@ -10,6 +10,17 @@ export function ScenesContainer() {
 
   const scenes = () => (params.project ? findProject(params.project)?.scenes ?? [] : []);
 
+  const addScene = async () => {
+    if (!params.project) return;
+    const res = await fetch("/__scenes/scene", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ project: params.project }),
+    });
+    const { project, scene } = (await res.json()) as { project: string; scene: string };
+    navigate(`/${project}/${scene}`);
+  };
+
   return (
     <div class="flex items-start justify-center gap-4">
       <For each={scenes()}>
@@ -36,6 +47,7 @@ export function ScenesContainer() {
 
       <button
         type="button"
+        onClick={addScene}
         class="flex h-16 w-[114px] shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-background text-muted-foreground"
       >
         <Icon name="plus-add" />

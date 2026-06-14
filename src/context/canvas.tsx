@@ -284,14 +284,30 @@ export function CanvasProvider(props: { children: JSX.Element }) {
   };
 
   const onKeyDown = (e: KeyboardEvent) => {
-    if (e.code !== "Space" && e.key !== " ") return;
     const target = e.target as HTMLElement | null;
-    // don't hijack space while typing in an input, textarea, or contenteditable
+    // don't hijack keys while typing in an input, textarea, or contenteditable
     if (target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))) {
       return;
     }
+
+    if (e.code === "Space" || e.key === " ") {
+      e.preventDefault();
+      togglePlayback();
+      return;
+    }
+
+    // Arrow keys step the playhead: left/right by one frame, up/down by one second.
+    const step = ({
+      ArrowRight: 1,
+      ArrowLeft: -1,
+      ArrowUp: fps(),
+      ArrowDown: -fps(),
+    } as Record<string, number>)[e.key];
+    if (step === undefined) return;
     e.preventDefault();
-    togglePlayback();
+    setPlaying(false);
+    const last = Math.max(0, totalFrames() - 1);
+    seek(Math.min(Math.round(currentFrame()) + step, last));
   };
 
   const resetCamera = () => {

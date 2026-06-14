@@ -1,7 +1,0 @@
-{
-  "controls": [
-    { "sid": "ballColor", "label": "Ball color" },
-    { "sid": "ballOpacity", "label": "Ball opacity", "min": 0, "max": 100, "step": 1 },
-    { "sid": "ballSize", "label": "Ball size", "min": 20, "max": 400, "step": 1 }
-  ]
-}

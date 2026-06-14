@@ -131,6 +131,7 @@ export function CanvasProvider(props: { children: JSX.Element }) {
   createEffect(() => {
     const raw = searchParams.frame;
     currentScene(); // restart playback whenever the scene changes
+    totalFrames(); // re-run once the animation has loaded so seek() can clamp against a real length
     untrack(() => {
       const frame = raw != null ? Number(raw) : null;
       if (frame != null && Number.isFinite(frame)) {

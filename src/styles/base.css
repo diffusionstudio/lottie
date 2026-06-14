@@ -146,7 +146,7 @@
 }
 
 .z-button-variant-default {
-  @apply bg-primary text-foreground hover:bg-primary/80;
+  @apply bg-primary dark:text-foreground text-background hover:bg-primary/80;
 }
 
 .z-button-variant-outline {

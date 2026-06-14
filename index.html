@@ -1,11 +1,26 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/mark.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
     <title>Text-to-Lottie by Diffusion Studio</title>
+    <!-- Apply the system color scheme before first paint to avoid a flash of
+         the wrong theme. Dark mode is class-based (see the `dark` custom
+         variant in src/index.css), so we just toggle `.dark` on <html>. -->
+    <script>
+      (function () {
+        var mq = window.matchMedia('(prefers-color-scheme: dark)');
+        var apply = function (dark) {
+          document.documentElement.classList.toggle('dark', dark);
+        };
+        apply(mq.matches);
+        mq.addEventListener('change', function (e) {
+          apply(e.matches);
+        });
+      })();
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

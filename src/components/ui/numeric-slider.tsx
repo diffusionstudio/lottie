@@ -274,6 +274,10 @@ export function NumericSlider(props: NumericSliderProps) {
             onBlur={handleInputBlur}
             onKeyDown={handleInputKeyDown}
             disabled={props.disabled}
+            style={{
+              "box-shadow": "none !important",
+              "border": "none !important",
+            }}
           />
         </div>
       </div>

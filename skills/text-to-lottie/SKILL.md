@@ -325,3 +325,7 @@ screenshot lands on an exact, still frame. Read the frame count from
     `/<project>/<scene>` to see the scene. A blank canvas (no error) → re-check
     the group wrapping.
 5. The canvas is rendering the desired animation
+
+## References
+
+- Lottie format specification: <https://github.com/lottie/lottie-spec/tree/main/docs/specs>

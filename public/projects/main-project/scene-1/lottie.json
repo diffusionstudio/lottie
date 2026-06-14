@@ -5,6 +5,7 @@
   "op": 90,
   "w": 512,
   "h": 512,
+  "nm": "Main Scene",
   "assets": [],
   "slots": {
     "ballColor": { "p": { "a": 0, "k": [0.231, 0.6, 1, 1] } },

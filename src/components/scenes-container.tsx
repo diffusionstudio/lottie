@@ -54,21 +54,16 @@ function SceneItem(props: SceneItemProps) {
   return (
     <button
       type="button"
-      class="flex flex-col gap-2 w-[114px] shrink-0"
+      class="flex flex-col gap-2 w-[114px] shrink-0 aspect-video overflow-hidden rounded-md bg-background"
       onClick={() => navigate(`/${params.project}/${props.scene.slug}`)}
+      classList={{
+        "border border-border": !props.active,
+        "border-2 border-primary": props.active,
+      }}
     >
-      <div
-        class="aspect-video w-full overflow-hidden rounded-md bg-background"
-        classList={{
-          "border border-border": !props.active,
-          "border-2 border-primary": props.active,
-        }}
-      >
-        <Show when={thumbnail()}>
-          <img src={thumbnail()} alt={props.scene.label} class="h-full w-full object-cover" />
-        </Show>
-      </div>
-      <span class="text-center text-xxs text-muted-foreground">{props.scene.label}</span>
+      <Show when={thumbnail()}>
+        <img src={thumbnail()} alt={props.scene.label} class="h-full w-full object-cover" />
+      </Show>
     </button>
   )
 }

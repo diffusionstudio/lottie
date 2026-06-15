@@ -6,7 +6,7 @@
 [![](https://img.shields.io/badge/Follow%20for-Updates-black?logo=x&logoColor=white)](https://x.com/diffusionhq)
 [![](https://img.shields.io/badge/Combinator-F24-orange?logo=ycombinator&logoColor=white)](https://www.ycombinator.com/companies/diffusion-studio)
 
-**Text-to-lottie** is an open-source harness for generating production ready Lottie animations with claude code/codex or any other coding agent supporting skills.
+**Text-to-lottie** is an open-source framework for generating production ready Lottie animations with claude code/codex or any other coding agent supporting skills.
 
 ## Created with Text-to-Lottie
 <table>
@@ -30,7 +30,7 @@ Then ask your coding agent to generate a Lottie animation using `text-to-lottie`
 Example prompt:
 > Create a Lottie animation from the SVG path in https://github.com/JaceThings/SF-Hello/blob/main/SVG/hello-en.svg. Reveal the path with an animation that follows the natural path direction. Apply a premium apple themed gradient to the path. Use ease-in-out timing, a transparent background, and preserve the original SVG geometry.
 
-The agent will setup a harness that allows you to inspect/edit the generated lottie with the included player.
+The agent sets up the workspace and the included player, where each animation lives as a scene inside a project. Scenes load automatically from `public/projects/<project>/<scene>/lottie.json` and live-update in the player as the agent edits them — so you can inspect, scrub, and refine the generated Lottie in real time.
 
 ## Prompt guide
 

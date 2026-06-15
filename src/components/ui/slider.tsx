@@ -1,57 +1,118 @@
-import * as React from "react";
-import * as SliderPrimitive from "@radix-ui/react-slider";
-
+import type { PolymorphicProps } from "@kobalte/core/polymorphic";
+import {
+  type SliderFillProps,
+  Slider as SliderPrimitive,
+  type SliderRootProps,
+  type SliderThumbProps,
+  type SliderTrackProps,
+  useSliderContext,
+} from "@kobalte/core/slider";
+import {
+  type ComponentProps,
+  createMemo,
+  For,
+  mergeProps,
+  splitProps,
+  untrack,
+  type ValidComponent,
+} from "solid-js";
 import { cn } from "@/lib/utils";
 
-function Slider({
-  className,
-  defaultValue,
-  value,
-  min = 0,
-  max = 100,
-  ...props
-}: React.ComponentProps<typeof SliderPrimitive.Root>) {
-  const _values = React.useMemo(
-    () =>
-      Array.isArray(value)
-        ? value
-        : Array.isArray(defaultValue)
-          ? defaultValue
-          : [min, max],
-    [value, defaultValue, min, max]
-  );
+type SliderProps<T extends ValidComponent = "div"> = PolymorphicProps<T, SliderRootProps<T>> &
+  Pick<ComponentProps<T>, "class">;
+
+const Slider = <T extends ValidComponent = "div">(rawProps: SliderProps<T>) => {
+  const props = mergeProps({ minValue: 0, maxValue: 100 } as SliderProps<T>, rawProps);
+  const [local, others] = splitProps(props as SliderProps, ["class", "defaultValue", "value"]);
+
+  const values = createMemo(() => {
+    if (Array.isArray(untrack(() => local.value))) return untrack(() => local.value);
+    if (Array.isArray(local.defaultValue)) return local.defaultValue;
+    return [others.minValue, others.maxValue];
+  });
 
   return (
-    <SliderPrimitive.Root
+    <SliderPrimitive
       data-slot="slider"
-      defaultValue={defaultValue}
-      value={value}
-      min={min}
-      max={max}
-      className={cn(
-        "relative flex w-full touch-none items-center select-none data-[disabled]:opacity-50",
-        className
+      defaultValue={local.defaultValue}
+      value={local.value}
+      class={cn(
+        "relative z-slider flex w-full touch-none select-none items-center data-[orientation=vertical]:h-full data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col data-disabled:opacity-50",
+        local.class,
       )}
-      {...props}
+      {...others}
     >
-      <SliderPrimitive.Track
-        data-slot="slider-track"
-        className="bg-white/15 relative grow overflow-hidden rounded-full h-1 w-full"
-      >
-        <SliderPrimitive.Range
-          data-slot="slider-range"
-          className="bg-primary absolute h-full"
-        />
-      </SliderPrimitive.Track>
-      {Array.from({ length: _values.length }, (_, index) => (
-        <SliderPrimitive.Thumb
-          data-slot="slider-thumb"
-          key={index}
-          className="border-primary bg-foreground ring-ring/50 block size-3 shrink-0 rounded-full border shadow-sm transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-none disabled:pointer-events-none"
-        />
-      ))}
-    </SliderPrimitive.Root>
+      <SliderTrack>
+        <SliderFill />
+      </SliderTrack>
+      <For each={values()}>{() => <SliderThumb />}</For>
+    </SliderPrimitive>
   );
-}
+};
+
+type SliderTrackComponentProps<T extends ValidComponent = "div"> = PolymorphicProps<
+  T,
+  SliderTrackProps<T>
+> &
+  Pick<ComponentProps<T>, "class" | "children">;
+
+const SliderTrack = <T extends ValidComponent = "div">(props: SliderTrackComponentProps<T>) => {
+  const [local, others] = splitProps(props as SliderTrackComponentProps, ["class", "children"]);
+  const context = useSliderContext();
+  return (
+    <SliderPrimitive.Track
+      data-slot="slider-track"
+      data-orientation={context.state.orientation()}
+      class={cn("relative z-slider-track grow select-none overflow-hidden", local.class)}
+      {...others}
+    >
+      {local.children}
+    </SliderPrimitive.Track>
+  );
+};
+
+type SliderFillComponentProps<T extends ValidComponent = "div"> = PolymorphicProps<
+  T,
+  SliderFillProps<T>
+> &
+  Pick<ComponentProps<T>, "class">;
+
+const SliderFill = <T extends ValidComponent = "div">(props: SliderFillComponentProps<T>) => {
+  const [local, others] = splitProps(props as SliderFillComponentProps, ["class"]);
+  const context = useSliderContext();
+  return (
+    <SliderPrimitive.Fill
+      data-slot="slider-range"
+      data-orientation={context.state.orientation()}
+      class={cn(
+        "absolute z-slider-range data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full",
+        local.class,
+      )}
+      {...others}
+    />
+  );
+};
+
+type SliderThumbComponentProps<T extends ValidComponent = "span"> = PolymorphicProps<
+  T,
+  SliderThumbProps<T>
+> &
+  Pick<ComponentProps<T>, "class">;
+
+const SliderThumb = <T extends ValidComponent = "span">(props: SliderThumbComponentProps<T>) => {
+  const [local, others] = splitProps(props as SliderThumbComponentProps, ["class"]);
+  return (
+    <SliderPrimitive.Thumb
+      data-slot="slider-thumb"
+      class={cn(
+        "z-slider-thumb block shrink-0 select-none disabled:pointer-events-none disabled:opacity-50",
+        local.class,
+      )}
+      {...others}
+    >
+      <SliderPrimitive.Input />
+    </SliderPrimitive.Thumb>
+  );
+};
 
 export { Slider };

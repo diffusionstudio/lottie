@@ -1,90 +1,234 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+/* Keep Tailwind's automatic source detection out of the Lottie source files
+   under public/projects. They hold arbitrary strings and are rewritten on every
+   control auto-save; left in scope Tailwind would regenerate index.css on each
+   save (a CSS HMR churn that can cascade into a full page reload). */
+@source not "../public/projects";
 @import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/inter";
+@import "./styles/base.css";
 
 @custom-variant dark (&:is(.dark *));
 
+@theme inline {
+  --text-xxs: 11px;
+  --font-heading: var(--font-sans);
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --font-weight-strong: 450;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --color-canvas: var(--canvas);
+  --color-selection: var(--selection);
+  --color-selection-foreground: var(--selection-foreground);
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-2xl: 12px;
+  --radius-3xl: 14px;
+  --radius-4xl: 16px;
+}
+
 :root {
-  --radius: 10px;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --canvas: hsla(0, 0%, 91%, 1);
+  --background: hsla(0, 0%, 100%, 1);
+  --foreground: hsla(240, 5%, 9%, 1);
+  --card: hsla(0, 0%, 100%, 1);
+  --card-foreground: hsla(240, 5%, 9%, 1);
+  --popover: hsla(0, 0%, 95%, 1);
+  --popover-foreground: hsla(240, 5%, 9%, 1);
+  --primary: hsla(207, 100%, 50%, 1);
+  --primary-foreground: hsla(0, 0%, 95%, 1);
+  --primary-hover: hsla(207, 98%, 40%, 1);
+  --primary-pressing: hsla(207, 99%, 35%, 1);
+  --secondary: hsla(0, 0%, 95%, 1);
+  --secondary-foreground: hsla(207, 100%, 90%, 1);
+  --secondary-hover: hsla(0, 0%, 88%, 1);
+  --secondary-pressing: hsla(0, 0%, 40%, 1);
+  --tertiary: hsla(207, 100%, 50%, 1);
+  --tertiary-foreground: hsla(207, 100%, 90%, 1);
+  --tertiary-hover: hsla(207, 80%, 40%, 1);
+  --tertiary-pressing: hsla(207, 80%, 35%, 1);
+  --muted: hsla(0, 0%, 91%, 1);
+  --muted-foreground: hsla(0, 0%, 45%, 1);
+  --disabled-foreground: hsla(0, 0%, 40%, 1);
+  --accent: hsla(0, 0%, 95%, 1);
+  --accent-foreground: hsla(0, 0%, 45%, 1);
+  --destructive: hsla(0, 79%, 54%, 1);
+  --destructive-foreground: hsla(0, 0%, 100%, 1);
+  --destructive-hover: hsla(0, 60%, 40%, 1);
+  --destructive-pressing: hsla(0, 53%, 27%, 1);
+  --destructive-accent: hsla(0, 79%, 54%, 0.24);
+  --destructive-accent-foreground: hsla(0, 78%, 95%, 1);
+  --success-accent: hsla(162, 66%, 29%, 0.24);
+  --success-accent-foreground: hsla(162, 84%, 89%, 1);
+  --border: hsla(0, 0%, 91%, 1);
+  --border-input: hsla(0, 0%, 88%, 1);
+  --border-darker: hsla(0, 0%, 95%, 1);
+  --input: hsla(0, 0%, 95%, 1);
+  --ring: hsla(207, 100%, 50%, 1);
+  --canvas: hsla(0, 0%, 91%, 1);
+  --overlay: hsla(0, 0%, 9%, 0.7);
+  --overlay-soft: hsla(0, 0%, 9%, 0.4);
+  --selection: hsla(207, 100%, 50%, 1);
+  --selection-foreground: hsla(207, 100%, 90%, 1);
+  --selection-muted-foreground: hsla(0, 0%, 45%, 1);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.269 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.371 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --canvas: hsla(0, 0%, 9%, 1);
+  --background: hsla(0, 0%, 11%, 1);
+  --foreground: hsla(0, 0%, 95%, 1);
+  --card: hsla(0, 0%, 11%, 1);
+  --card-foreground: hsla(0, 0%, 95%, 1);
+  --popover: hsla(0, 0%, 9%, 1);
+  --popover-foreground: hsla(0, 0%, 95%, 1);
+  --primary: hsla(207, 100%, 50%, 1);
+  --primary-foreground: hsla(0, 0%, 95%, 1);
+  --primary-hover: hsla(207, 98%, 29%, 1);
+  --primary-pressing: hsla(207, 99%, 22%, 1);
+  --secondary: hsla(0, 0%, 16%, 1);
+  --secondary-foreground: hsla(0, 0%, 95%, 1);
+  --secondary-hover: hsla(0, 0%, 25%, 1);
+  --secondary-pressing: hsla(0, 0%, 40%, 1);
+  --tertiary: hsla(207, 99%, 22%, 1);
+  --tertiary-foreground: hsla(207, 100%, 90%, 1);
+  --tertiary-hover: hsla(207, 80%, 17%, 1);
+  --tertiary-pressing: hsla(207, 80%, 14%, 1);
+  --muted: hsla(0, 0%, 25%, 1);
+  --muted-foreground: hsla(0, 0%, 62%, 1);
+  --disabled-foreground: hsla(0, 0%, 40%, 1);
+  --accent: hsla(0, 0%, 16%, 1);
+  --accent-foreground: hsla(0, 0%, 62%, 1);
+  --destructive: hsla(0, 79%, 54%, 1);
+  --destructive-foreground: hsla(0, 0%, 100%, 1);
+  --destructive-hover: hsla(0, 60%, 40%, 1);
+  --destructive-pressing: hsla(0, 53%, 27%, 1);
+  --destructive-accent: hsla(0, 79%, 54%, 0.24);
+  --destructive-accent-foreground: hsla(0, 78%, 95%, 1);
+  --success-accent: hsla(162, 66%, 29%, 0.24);
+  --success-accent-foreground: hsla(162, 84%, 89%, 1);
+  --border: hsla(0, 0%, 15%, 1);
+  --border-input: hsla(0, 0%, 25%, 1);
+  --border-darker: hsla(0, 0%, 11%, 1);
+  --input: hsla(0, 0%, 16%, 1);
+  --ring: hsla(207, 100%, 50%, 1);
+  --canvas: hsla(0, 0%, 9%, 1);
+  --overlay: hsla(0, 0%, 9%, 0.7);
+  --overlay-soft: hsla(0, 0%, 9%, 0.4);
+  --selection: hsla(207, 99%, 22%, 1);
+  --selection-foreground: hsla(207, 100%, 90%, 1);
+  --selection-muted-foreground: hsla(0, 0%, 16%, 1);
+  --inset: hsla(0, 0%, 25%, 1);
 }
 
-@theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  /* Default focus indicator for the app: match the `.focus-ring` utility
+     (a single inset 1px ring in --ring, no outline). The `!important`
+     flags are needed to suppress shadcn's translucent `ring-[3px]
+     ring-ring/50` halo and any UA outline, since those component styles
+     are unlayered and otherwise win over `@layer base`. */
+  *:focus-visible {
+    border-color: var(--ring);
+    box-shadow: inset 0 0 0 1px var(--ring) !important;
+    outline: none !important;
+    transition:
+      box-shadow 0.2s,
+      outline 0.2s,
+      border 0.2s;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  html {
+    @apply font-sans;
+  }
+
+  .z-font-heading {
+    @apply font-heading;
+  }
+
+  ::selection {
+    background-color: var(--color-selection);
+    color: var(--color-selection-foreground);
+  }
 }
 
-* {
-  border-color: var(--border);
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
-html,
-body,
-#root {
-  height: 100%;
+@layer utilities {
+
+  .focus-ring:focus-visible,
+  .focus-ring:has(:focus),
+  .focus-ring[data-dragging='true'] {
+    border-color: var(--ring);
+    box-shadow: inset 0 0 0 1px var(--ring);
+    outline: none;
+    transition:
+      box-shadow 0.2s,
+      outline 0.2s,
+      border 0.2s;
+  }
 }
 
-body {
-  margin: 0;
-  background-color: var(--background);
-  color: var(--foreground);
-  -webkit-font-smoothing: antialiased;
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+@font-face {
+  font-family: 'Inter';
+  src: url('./assets/fonts/Inter-VariableFont_opsz,wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-stretch: normal;
+  font-style: normal;
+  font-optical-sizing: auto;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('./assets/fonts/JetBrainsMono-VariableFont.ttf') format('truetype');
+  font-weight: 100 900;
+  font-stretch: normal;
+  font-style: normal;
+  font-feature-settings: 'zero' 1;
 }

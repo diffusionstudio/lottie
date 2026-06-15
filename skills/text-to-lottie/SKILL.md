@@ -5,19 +5,12 @@ description: Author a Lottie (Bodymovin) JSON animation that renders in a local 
 
 # Authoring Renderable Lottie Files
 
-This app renders Lottie with **Skia's Skottie** module (via `canvaskit-wasm`),
-not the JS `lottie-web` runtime. Follow the rules below and
-verify the result.
-
-> This skill covers the *mechanics* — the JSON shape Skottie needs. For the
-> *craft* (timing, easing, choreography, Disney animation principles), see
-> LottieFiles' [motion-design skill](https://github.com/lottiefiles/motion-design-skill).
-> Its guidance is in milliseconds; convert to frames with `frames = ms / 1000 * fr`.
+This app renders Lottie with **Skia's Skottie** module, follow the rules below and verify the result.
 
 ## Setting up the project
 
-The deliverable is not just `public/lottie.json`: the viewer should be set up
-and the animation should be previewable in the browser. If the player project is
+The deliverable is not just a `lottie.json`: the viewer should be set up and the
+animation should be previewable in the browser. If the player project is
 missing, create it; if it exists, install/update dependencies as needed, start
 the dev server, and open the local preview URL for verification.
 
@@ -36,151 +29,149 @@ npm install   # postinstall copies the CanvasKit wasm into /public
 npm run dev
 ```
 
-Then open the printed local URL. If you already have the project, just
-`npm install && npm run dev`.
+Then open the printed local URL. The dev server defaults to **`http://localhost:3030`**. If you already have the project, just `npm install && npm run dev`.
+
+## Required folder structure in `/public`
+
+The player is a multi-scene editor: every scene lives in its own folder under
+`public/projects/`, and the app routes to one by path. **You must follow this
+layout exactly** — anything off-layout is ignored.
+
+```
+public/
+├── canvaskit.wasm                 # Skia wasm (copied in by postinstall — don't touch)
+└── projects/
+    └── <project-slug>/            # e.g. main-project
+        └── <scene-N>/             # e.g. scene-1, scene-2, … (see ordering below)
+            ├── lottie.json        # REQUIRED — the Bodymovin animation
+            ├── controls.json      # OPTIONAL — properties-panel metadata (see slots)
+            └── <image files>      # OPTIONAL — .png/.jpg/.jpeg/.webp/.gif/.svg assets
+```
+
+Rules the scanner enforces:
+
+- **Slugs are URL segments.** `<project-slug>` and `<scene-N>` must be
+  folder-safe lowercase-ish names; they become the path `/<project>/<scene>`.
+  The sidebar label is derived by title-casing the slug (`main-project` →
+  "Main Project", `scene-1` → "Scene 1").
+- **Scene ordering is the trailing `-N`.** A scene's sort order is the number at
+  the end of its slug (`scene-1`, `scene-2`, …, regex `/-(\d+)$/`). Name new
+  scenes `scene-<N>` so they order correctly; a slug with no trailing number
+  sorts last.
+- **`lottie.json` is mandatory.** A scene folder without one is silently dropped
+  from the tree (and a project with zero valid scenes disappears entirely).
+- **Images are referenced by bare filename.** Put an image in the scene folder
+  and reference it in the Lottie's `assets[].p` by filename only
+  (e.g. `"p": "background.png"`); the loader resolves it from the same folder.
 
 ## Where to write the file (and how it loads)
 
-- Write the animation JSON to **`public/lottie.json`**. That is the only file
-  you need to touch to change what the app shows — [`src/App.tsx`](../../../src/App.tsx)
-  fetches `/lottie.json` at startup.
-- With the dev server running (`npm run dev`), a Vite plugin watches that file
-  and **full-reloads the page on save**, so your edit appears immediately. No
-  other wiring is required.
-- If parsing fails, the app shows the error on screen ("CanvasKit could not
-  parse the Lottie file.").
+- Write your animation to **`public/projects/<project>/<scene-N>/lottie.json`**.
+  If you're creating a brand-new animation and no target scene is specified,
+  create a project folder (e.g. `public/projects/my-animation/scene-1/`) and
+  write `lottie.json` there, then open `/my-animation/scene-1`.
+- The app routes on **`/:project/:scene`** ([`src/router.tsx`](../../../src/router.tsx));
+  `/` redirects to the first project's first scene. The canvas provider
+  ([`src/context/canvas.tsx`](../../../src/context/canvas.tsx)) fetches that
+  scene's `lottie.json` (plus its images) and renders it.
+- With the dev server running, the scenes plugin **watches the folder tree**.
+  Adding, removing, or renaming a project/scene folder live-updates the sidebar
+  over Vite's HMR socket (no reload). Editing the *contents* of an existing
+  `lottie.json` does **not** auto-reload the active scene — reload the page (or
+  re-navigate) to pick up hand-edited JSON.
 
-## Required top-level shape
+## Example
 
-Every Lottie document is one JSON object with at least these fields:
-
-```jsonc
+```json lottie.json
 {
-  "v": "5.7.0",      // bodymovin version string
-  "fr": 60,          // frame rate (fps)
-  "ip": 0,           // in point (start frame)
-  "op": 120,         // out point (end frame) — duration = (op - ip) / fr seconds
-  "w": 512,          // composition width  (px)
-  "h": 512,          // composition height (px)
-  "assets": [],      // images / precomps; [] if none
-  "layers": [ /* ... */ ]
-}
-```
-
-The app letterboxes the `w`×`h` composition to fit the canvas, so pick a square
-or sensible aspect ratio. `op` controls the total frame count shown in the UI.
-
-## Layers
-
-`layers` follows After Effects order: the **first** entry in the array is the
-**topmost** layer, and later entries render underneath it. Each layer needs at
-minimum:
-
-```jsonc
-{
-  "ty": 4,           // layer type: 4 = shape layer (the common case)
-  "nm": "circle",    // name (optional but helpful)
-  "ip": 0,           // layer in point
-  "op": 120,         // layer out point — must cover the frames you want it visible
-  "st": 0,           // start time
-  "ks": { /* transform — see below */ },
-  "shapes": [ /* ... */ ]   // for shape layers
-}
-```
-
-Common layer types: `4` shape, `2` image, `1` solid, `0` precomp, `5` text.
-Prefer **shape layers (`ty: 4`)** for LLM-authored animations — no external
-assets needed.
-
-### The transform block (`ks`)
-
-Every layer has a transform. Each property is either static (`{ "a": 0, "k": value }`)
-or animated (`{ "a": 1, "k": [ ...keyframes ] }`).
-
-```jsonc
-"ks": {
-  "o": { "a": 0, "k": 100 },                 // opacity 0–100
-  "r": { "a": 0, "k": 0 },                   // rotation (degrees)
-  "p": { "a": 0, "k": [256, 256, 0] },       // position [x, y, z]
-  "a": { "a": 0, "k": [0, 0, 0] },           // anchor point [x, y, z]
-  "s": { "a": 0, "k": [100, 100, 100] }      // scale (percent, per axis)
-}
-```
-
-**Anchor matters:** rotation and scale pivot around the anchor `a`, expressed in
-the layer's own coordinate space. To rotate a shape around its own center, set
-the shape's geometry around the anchor (e.g. center the ellipse on `a`).
-
-## Shapes — the #1 Skottie gotcha
-
-**Skottie requires shape elements to be wrapped in a Group (`ty: "gr"`).** A flat
-list of shapes + fills directly in `shapes` renders **blank**. Always nest the
-geometry, fill/stroke, and a group transform inside a group's `it` array:
-
-```jsonc
-"shapes": [
-  {
-    "ty": "gr",            // GROUP — required wrapper
-    "nm": "ball",
-    "it": [
-      {
-        "ty": "el",        // ellipse
-        "p": { "a": 0, "k": [0, 0] },
-        "s": { "a": 0, "k": [120, 120] }
-      },
-      {
-        "ty": "fl",        // fill
-        "c": { "a": 0, "k": [0.2, 0.6, 1, 1] },   // RGBA, each 0–1
-        "o": { "a": 0, "k": 100 }
-      },
-      {
-        "ty": "tr",        // GROUP TRANSFORM — include even if identity
-        "p": { "a": 0, "k": [0, 0] },
-        "a": { "a": 0, "k": [0, 0] },
-        "s": { "a": 0, "k": [100, 100] },
+  "v": "5.7.0",
+  "fr": 60,
+  "ip": 0,
+  "op": 90,
+  "w": 512,
+  "h": 512,
+  "nm": "Bouncing ball",
+  "assets": [],
+  "slots": {
+    "ballColor": { "p": { "a": 0, "k": [0.231, 0.6, 1, 1] } },
+    "ballOpacity": { "p": { "a": 0, "k": 100 } },
+    "ballSize": { "p": { "a": 0, "k": [120, 120] } }
+  },
+  "layers": [
+    {
+      "ty": 4,
+      "nm": "ball",
+      "ip": 0,
+      "op": 90,
+      "st": 0,
+      "ks": {
+        "o": { "sid": "ballOpacity" },
         "r": { "a": 0, "k": 0 },
-        "o": { "a": 0, "k": 100 }
-      }
-    ]
-  }
-]
-```
-
-Shape primitives inside `it`:
-- `"el"` ellipse — `p` center, `s` [width, height]
-- `"rc"` rectangle — `p` center, `s` [w, h], `r` corner radius
-- `"sh"` custom path — `ks.k` is a bezier `{ "c": closed?, "v": verts, "i": inTangents, "o": outTangents }`
-- `"st"` stroke — `c` color, `w` width, `o` opacity
-- `"fl"` fill — `c` color (RGBA 0–1), `o` opacity
-- `"tr"` the group's transform (always include it last)
-
-**Colors are normalized 0–1 RGBA**, not 0–255. `[1, 0, 0, 1]` is opaque red.
-
-## Animating a property (keyframes)
-
-Set `"a": 1` and make `k` an array of keyframe objects. Each keyframe has a
-time `t` (frame), a value `s` (start value for that segment, as an array), and
-easing handles `i`/`o`:
-
-```jsonc
-"p": {
-  "a": 1,
-  "k": [
-    { "t": 0,   "s": [256, 120], "i": { "x": [0.5], "y": [1] }, "o": { "x": [0.5], "y": [0] } },
-    { "t": 60,  "s": [256, 400], "i": { "x": [0.5], "y": [1] }, "o": { "x": [0.5], "y": [0] } },
-    { "t": 120, "s": [256, 120] }
+        "a": { "a": 0, "k": [0, 0, 0] },
+        "s": { "a": 0, "k": [100, 100, 100] },
+        "p": {
+          "a": 1,
+          "k": [
+            { "t": 0, "s": [256, 140, 0], "i": { "x": [0.5], "y": [1] }, "o": { "x": [0.7], "y": [0] } },
+            { "t": 45, "s": [256, 380, 0], "i": { "x": [0.3], "y": [1] }, "o": { "x": [0.5], "y": [0] } },
+            { "t": 90, "s": [256, 140, 0] }
+          ]
+        }
+      },
+      "shapes": [
+        {
+          "ty": "gr",
+          "nm": "ball-group",
+          "it": [
+            { "ty": "el", "p": { "a": 0, "k": [0, 0] }, "s": { "sid": "ballSize" } },
+            { "ty": "fl", "c": { "sid": "ballColor" }, "o": { "a": 0, "k": 100 } },
+            { "ty": "tr", "p": { "a": 0, "k": [0, 0] }, "a": { "a": 0, "k": [0, 0] }, "s": { "a": 0, "k": [100, 100] }, "r": { "a": 0, "k": 0 }, "o": { "a": 0, "k": 100 } }
+          ]
+        }
+      ]
+    },
+    {
+      "ty": 4,
+      "nm": "background",
+      "ip": 0,
+      "op": 90,
+      "st": 0,
+      "ks": {
+        "o": { "a": 0, "k": 100 },
+        "r": { "a": 0, "k": 0 },
+        "a": { "a": 0, "k": [0, 0, 0] },
+        "s": { "a": 0, "k": [100, 100, 100] },
+        "p": { "a": 0, "k": [256, 256, 0] }
+      },
+      "shapes": [
+        {
+          "ty": "gr",
+          "nm": "background-group",
+          "it": [
+            { "ty": "rc", "p": { "a": 0, "k": [0, 0] }, "s": { "a": 0, "k": [512, 512] }, "r": { "a": 0, "k": 0 } },
+            { "ty": "fl", "c": { "a": 0, "k": [0.5, 0.5, 0.5, 1] }, "o": { "a": 0, "k": 100 } },
+            { "ty": "tr", "p": { "a": 0, "k": [0, 0] }, "a": { "a": 0, "k": [0, 0] }, "s": { "a": 0, "k": [100, 100] }, "r": { "a": 0, "k": 0 }, "o": { "a": 0, "k": 100 } }
+          ]
+        }
+      ]
+    }
   ]
 }
 ```
 
-- `t` is the frame number; the last keyframe usually has no `i`/`o`/easing pair
-  beyond `s` (it's the end).
-- `s` is **always an array**, even for scalars like rotation: `"s": [360]`.
-- `i`/`o` are the bezier ease handles (incoming / outgoing). `x`/`y` arrays in
-  `[0..1]`. For a smooth ease use `x:[0.5], y:[1]` (in) and `x:[0.5], y:[0]`
-  (out); for linear use `x:[0], y:[0]` / `x:[1], y:[1]`. Multi-dimensional
-  values may use per-axis arrays.
-- To **loop seamlessly**, make the last keyframe's value equal the first.
+```json controls.json
+{
+  "controls": [
+    { "sid": "ballColor", "label": "Ball color" },
+    { "sid": "ballOpacity", "label": "Ball opacity", "min": 0, "max": 100, "step": 1 },
+    { "sid": "ballSize", "label": "Ball size", "min": 20, "max": 400, "step": 1 }
+  ]
+}
+```
+
+**Recommended: a top-level `nm` string.** Give the document a root `nm` name.
+The player renders it as a label above the canvas and surfaces it in the agent
+context (see `/__context` below);
 
 ## Exposing editable properties (slots + the properties panel)
 
@@ -222,46 +213,21 @@ The app discovers slots automatically via Skottie's `getSlotInfo()` — you do
 **not** list them anywhere else for them to work. The panel appears as soon as
 the animation declares at least one slot.
 
-### Required: a background-color control on every animation
-
 **Every animation you produce must expose at least one control for the
-background color.** The player does not paint a composition background of its
-own, so add a full-composition background layer as the **last** entry in
-`layers` (so it renders underneath everything), fill it with a slotted color,
-and label that slot in `controls.json`. Use a rectangle the size of the
-composition:
+background color.**
 
-```jsonc
-// last layer in `layers`:
-{
-  "ty": 4, "nm": "background", "ip": 0, "op": 120, "st": 0,
-  "ks": { "o": { "a": 0, "k": 100 }, "p": { "a": 0, "k": [256, 256, 0] },
-          "a": { "a": 0, "k": [0, 0, 0] }, "s": { "a": 0, "k": [100, 100, 100] },
-          "r": { "a": 0, "k": 0 } },
-  "shapes": [
-    { "ty": "gr", "it": [
-      { "ty": "rc", "p": { "a": 0, "k": [256, 256] },
-        "s": { "a": 0, "k": [512, 512] }, "r": { "a": 0, "k": 0 } },
-      { "ty": "fl", "c": { "sid": "bgColor" }, "o": { "a": 0, "k": 100 } },
-      { "ty": "tr", "p": { "a": 0, "k": [0, 0] }, "a": { "a": 0, "k": [0, 0] },
-        "s": { "a": 0, "k": [100, 100] }, "r": { "a": 0, "k": 0 },
-        "o": { "a": 0, "k": 100 } }
-    ] }
-}
-```
 
 ```jsonc
 // slots:    "bgColor": { "p": { "a": 0, "k": [1, 1, 1, 1] } }   // default white
 // controls: { "sid": "bgColor", "label": "Background color" }
 ```
 
-Match the rectangle's `p`/`s` to your composition's `w`×`h`. This is in addition
-to whatever other controls the animation exposes.
 
-**2. (Optional) Describe presentation in `public/controls.json`.** Slots only
-expose an ID and type, not a label or a sensible slider range. The sidecar file
-adds that. It is optional — missing entries fall back to the slot ID and a
-generic 0–100 range. Like `lottie.json`, it hot-reloads on save.
+**2. (Optional) Describe presentation in the scene's `controls.json`.** Slots
+only expose an ID and type, not a label or a sensible slider range. A sidecar
+file next to the scene's `lottie.json` (i.e.
+`public/projects/<project>/<scene-N>/controls.json`) adds that. It is optional —
+missing entries fall back to the slot ID and a generic 0–100 range.
 
 ```jsonc
 {
@@ -278,48 +244,98 @@ generic 0–100 range. Like `lottie.json`, it hot-reloads on save.
 - An entry whose `sid` matches no slot is simply ignored; a slot with no entry
   still renders with defaults.
 
-## Controlling playback from a browser agent
+## Scenes the user can create or edit
 
-When you drive the page through a browser tool, **do not pixel-drag the slider or
-hunt for the play button** — it's unreliable and you can't land on an exact
-frame. Instead, **pin the frame in the URL** and read the canvas by its test id:
+The player is a live editor, so a scene's `lottie.json` is not only an input —
+**the user (and the UI) can change it out from under you:**
+
+- **New projects/scenes** appear via the sidebar's `+` buttons, by dropping a
+  `.json`/`.lottie` file onto the canvas, or by you creating folders on disk.
+  The watcher live-updates the tree, so a folder you write under
+  `public/projects/<project>/<scene-N>/` shows up without a restart.
+- **Control edits are written back to disk.** When the user drags a slider or
+  edits a slotted value, the app POSTs the updated document to `/__scenes/lottie`
+  and overwrites that scene's `lottie.json` — `public/projects` is the source of
+  truth. So before you re-edit a file, **re-read it from disk** rather than
+  trusting an earlier copy; the on-screen values may already differ.
+
+When you want to write or modify a scene, just write the `lottie.json` file at
+the correct path (the structure above). Use the existing scene if the user
+pointed you at one; otherwise create a new scene folder with the next
+`scene-<N>` index so you don't clobber their work.
+
+**For new projects, overwrite the placeholder scne in `public/projects/main-project/scene-1/lottie.json`.**
+
+## Inspecting what's playing — `/__context`
+
+The dev server exposes an **context endpoint** at `GET /__context`.
+Prefer this over guessing from screenshots: it returns the full project/scene
+tree (with `lastModified` mtimes), which scene is **active**, and the **live
+playback state** — including the current frame computed from elapsed time:
+
+```bash
+curl -s http://localhost:3030/__context
+```
+
+Use it to confirm your file landed (does the scene appear?), to see which scene
+the user is looking at, and to check the playhead without screenshotting. The
+browser POSTs to the same endpoint as a heartbeat — you don't need to POST.
+
+## Controlling playback
+
+When you drive the page through a browser tool, **pin the frame in the URL** and read the canvas:
 
 ```
-http://localhost:5173/?frame=60&paused=1
+http://localhost:3030/main-project/scene-1?frame=60
 ```
 
-- `?frame=N` seeks to frame `N` on load and holds it paused, so the moment sits
-  still for a screenshot. This is the right way to inspect a specific frame
-  (e.g. "is the ball at the bottom at frame 60?"): open `?frame=60`, then
+- `?frame=N` seeks to frame `N` on load **and pauses** there, so the moment sits
+  still for a screenshot. This is the right way to inspect a specific frame, then
   screenshot.
-- `?paused=1` starts paused (at frame 0, or at `frame` if also given);
-  `?paused=0` forces autoplay even with a frame pinned.
-- With no query params the animation autoplays as usual.
+- With no `frame` param the animation autoplays (on first load) as usual.
+- The frame is per-scene, so include the scene path: `/<project>/<scene>?frame=N`.
 
-To change the inspected frame, navigate to a new URL (or just edit the query
-string and reload). The canvas carries `data-testid="lottie-canvas"`, so a
-browser tool can target it directly for screenshots. If the canvas is blank,
+To change the inspected frame, navigate to a new URL (or edit the query string
+and reload). The canvas is `<canvas id="main-canvas">`. If the canvas is blank,
 the page hasn't finished loading or the Lottie failed to parse (check the
 on-screen error).
 
+## Verification recommendations
+
+Drive verification through the URL: `?frame=N` seeks and pauses, so each
+screenshot lands on an exact, still frame. Read the frame count from
+`GET /__context` (`live.totalFrames`) or compute it from `op` and `fr`.
+
+- **New scene → three screenshots** spanning the timeline: frame `0`, the
+  midpoint (`op/2`), and the last frame (`op-1`). This catches the start state,
+  the motion mid-flight, and the end pose in one pass.
+- **Small edits → one or two screenshots** around the region of interest (the
+  frames where your change is visible). No need to redo the full three-frame
+  sweep.
+- **Hunt for artifacts, not just prompt-fidelity.** Beyond "does it match what
+  was asked," look for problems that make output look unfinished. The result should be clean, intentional, and production-ready.
+
+## Best practices
+
+- Prioritize producing high-fidelity, production-ready animations.
+- Use appropriate easings and timing. Linear easings are often not the best choice.
+- Consider the overall motion design, including pacing, transitions, and visual continuity.
+- Choose the implementation approach that best fits the task.
+  - For complex or procedural animations, creating a script in `script/` to generate the Lottie file may be simpler and more maintainable.
+  - For targeted changes, modifying the Lottie JSON directly may be more efficient than recreating the animation.
+
 ## Before you finish — checklist
 
-1. The file is valid JSON (no comments, no trailing commas). Validate with
-   `node -e "JSON.parse(require('fs').readFileSync('public/lottie.json','utf8'))"`.
-2. Every shape primitive/fill is inside a `"ty": "gr"` group's `it` array, and
-   each group ends with a `"tr"` transform.
-3. Top-level `op` and each layer's `op` cover the frames you animate.
-4. Colors are 0–1 RGBA; positions/sizes are within the `w`×`h` composition.
-5. Keyframe `s` values are arrays; loops repeat the first value at the end.
-6. A background-color control is present: a full-composition background layer
-   (last in `layers`) with a slotted fill (e.g. `bgColor`) and a matching
-   `controls.json` label.
-7. The project is the official GitHub player (scaffolded via degit), not a
-   custom/hand-rolled viewer.
-8. If the dev server is running, just save — it hot-reloads. Otherwise start it
-   with `npm run dev`. A blank canvas (no error) → re-check the group wrapping.
-9. The player is running and the preview URL has been opened or reported. When a
-   browser tool is available, verify the page shows a nonblank rendered
-   animation before finalizing — pin a key frame via the URL (see "Controlling
-   playback from a browser agent"), e.g. open `?frame=60&paused=1` and
-   screenshot, rather than dragging the on-screen slider.
+1. The file lives at `public/projects/<project>/<scene-N>/lottie.json` (folder
+   structure followed; scene named `scene-<N>` for correct ordering).
+2. The file is valid JSON (no comments, no trailing commas). Validate with
+   `node -e "JSON.parse(require('fs').readFileSync('public/projects/<project>/<scene-N>/lottie.json','utf8'))"`.
+3. The project is the official GitHub player (scaffolded via degit)
+4. The dev server is running (`npm run dev`); navigate to
+    `/<project>/<scene>` to see the scene. A blank canvas (no error) → re-check
+    the group wrapping.
+5. The canvas is rendering the desired animation
+
+## References
+
+- Lottie format specification: <https://github.com/lottie/lottie-spec/tree/main/docs/specs>

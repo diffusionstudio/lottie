@@ -1,0 +1,88 @@
+[
+  {
+    "query": "Animate this SVG icon as a loopable loader.",
+    "must_read": [
+      "references/player-contract.md",
+      "references/recipe-loaders-icons.md",
+      "references/svg-compatibility.md",
+      "references/motion-taste.md"
+    ],
+    "may_read": [
+      "references/lottie-spec-map.md",
+      "references/design-taste.md"
+    ],
+    "must_not_read": [
+      "references/recipe-logo.md",
+      "references/recipe-lower-thirds.md",
+      "references/recipe-product-promo.md"
+    ]
+  },
+  {
+    "query": "Create a full-frame kinetic typography card with an editable background color.",
+    "must_read": [
+      "references/player-contract.md",
+      "references/recipe-typography.md",
+      "references/design-taste.md",
+      "references/motion-taste.md"
+    ],
+    "may_read": [
+      "references/lottie-spec-map.md"
+    ],
+    "must_not_read": [
+      "references/svg-compatibility.md",
+      "references/recipe-logo.md",
+      "references/recipe-loaders-icons.md"
+    ]
+  },
+  {
+    "query": "Start a reusable lower-third project with name and role slots.",
+    "must_read": [
+      "references/player-contract.md",
+      "references/recipe-lower-thirds.md",
+      "references/design-taste.md",
+      "references/motion-taste.md"
+    ],
+    "may_read": [
+      "references/recipe-starter-projects.md"
+    ],
+    "must_not_read": [
+      "references/recipe-svg-animation.md",
+      "references/recipe-loaders-icons.md"
+    ]
+  },
+  {
+    "query": "Build a product announcement with a light sweep and a slow push-in.",
+    "must_read": [
+      "references/player-contract.md",
+      "references/recipe-product-promo.md",
+      "references/recipe-camera-scene-motion.md",
+      "references/recipe-visual-effects.md",
+      "references/design-taste.md",
+      "references/motion-taste.md"
+    ],
+    "may_read": [
+      "references/lottie-spec-map.md"
+    ],
+    "must_not_read": [
+      "references/recipe-lower-thirds.md",
+      "references/recipe-diagram-technical.md"
+    ]
+  },
+  {
+    "query": "Trace this technical SVG diagram and highlight each node.",
+    "must_read": [
+      "references/player-contract.md",
+      "references/recipe-diagram-technical.md",
+      "references/svg-compatibility.md",
+      "references/design-taste.md",
+      "references/motion-taste.md"
+    ],
+    "may_read": [
+      "references/lottie-spec-map.md"
+    ],
+    "must_not_read": [
+      "references/recipe-logo.md",
+      "references/recipe-product-promo.md"
+    ]
+  }
+]

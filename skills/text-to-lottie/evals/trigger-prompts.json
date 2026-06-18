@@ -1,0 +1,72 @@
+[
+  {
+    "query": "Can you make this logo draw itself in and settle on a transparent background?",
+    "should_trigger": true,
+    "reason": "Logo reveal Lottie request."
+  },
+  {
+    "query": "I need a tiny success check animation after signup.",
+    "should_trigger": true,
+    "reason": "State feedback icon animation."
+  },
+  {
+    "query": "Turn this product screenshot into a launch animation with a headline.",
+    "should_trigger": true,
+    "reason": "Product promo Lottie scene."
+  },
+  {
+    "query": "Make this SVG diagram trace the flow step by step.",
+    "should_trigger": true,
+    "reason": "Technical SVG diagram animation."
+  },
+  {
+    "query": "Add a soft glass sweep across this kinetic title.",
+    "should_trigger": true,
+    "reason": "Typography animation with visual effect treatment."
+  },
+  {
+    "query": "Create a loopable loading spinner icon for the app.",
+    "should_trigger": true,
+    "reason": "Loader/icon Lottie request."
+  },
+  {
+    "query": "Make a lower third for the speaker name and job title.",
+    "should_trigger": true,
+    "reason": "Lower-third overlay animation."
+  },
+  {
+    "query": "Pan across this product card and zoom into the new feature.",
+    "should_trigger": true,
+    "reason": "Camera/scene motion for product animation."
+  },
+  {
+    "query": "The Skottie canvas is blank after I edited lottie.json. Can you fix it?",
+    "should_trigger": true,
+    "reason": "Skottie render/debug work."
+  },
+  {
+    "query": "Can you critique this logo and suggest brand strategy?",
+    "should_trigger": false,
+    "reason": "Design critique only, no Lottie deliverable."
+  },
+  {
+    "query": "Explain how After Effects expressions work.",
+    "should_trigger": false,
+    "reason": "After Effects advice, not local Lottie authoring."
+  },
+  {
+    "query": "Optimize this SVG file size for the website.",
+    "should_trigger": false,
+    "reason": "SVG optimization only, no animation request."
+  },
+  {
+    "query": "Make a GIF from this video clip.",
+    "should_trigger": false,
+    "reason": "Raster/video conversion, not Lottie."
+  },
+  {
+    "query": "What easing should I use for mobile UI animations?",
+    "should_trigger": false,
+    "reason": "General motion advice without a Lottie scene request."
+  }
+]

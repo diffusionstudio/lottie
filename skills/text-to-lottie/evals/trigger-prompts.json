@@ -25,6 +25,16 @@
     "reason": "Typography animation with visual effect treatment."
   },
   {
+    "query": "Create kinetic typography for 'fall fast, rise stronger'.",
+    "should_trigger": true,
+    "reason": "Kinetic typography Lottie request."
+  },
+  {
+    "query": "Morph OPEN into DONE without warping.",
+    "should_trigger": true,
+    "reason": "Text morph animation request."
+  },
+  {
     "query": "Create a loopable loading spinner icon for the app.",
     "should_trigger": true,
     "reason": "Loader/icon Lottie request."

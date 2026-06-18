@@ -18,14 +18,53 @@ handwritten/path reveals, text morphs, counters, and short message-led scenes.
 - Convert text to paths when exact font rendering matters or font availability
   is uncertain.
 
+## Category Distinctions
+
+- Title card: strong final still, clear hierarchy, restrained reveal.
+- Quote reveal: reading pace, line rhythm, attribution after the main idea.
+- Editorial text reveal: polished line breaks, masks, layout, and negative
+  space.
+- Handwritten/path reveal: natural stroke order, trim timing, and ink hold.
+- Kinetic typography: type-driven choreography tied to meaning, not only a text
+  entrance.
+- Text morph: compatible paths only; otherwise use mask, crossfade, replacement,
+  or layout change.
+- Text-on-path or camera-follow text: typography remains primary; use camera
+  scene motion as secondary only when framing movement is requested.
+
+## Typography Roles
+
+- Anchor text stabilizes the composition and may stay still or move subtly.
+- Support text provides context and should usually be calmer than the main
+  phrase.
+- Active text carries the main motion idea. For kinetic typography, choose at
+  least one active word or phrase before authoring.
+
+## Kinetic Quality Bar
+
+- For "kinetic typography", animate at least one major word or phrase with
+  meaning-driven position, scale, masking, layout change, framing/camera
+  movement, rhythmic timing, or emphasis.
+- Slide, fade, scale, and stagger are valid tools, but uniform entrance motion
+  applied to every word is not enough for kinetic typography.
+- Preserve readability. Kinetic type needs contrast between active motion and
+  stillness; not every word should compete for attention.
+- Let semantic words influence motion: `fall` drops, `rise` lifts, `snap` hits
+  sharply, `break` separates, `flow` travels smoothly, `soft` eases gently,
+  `heavy` lands with weight, `loud` expands or hits harder, `quiet` recedes,
+  `fast` compresses timing, and `slow` holds longer.
+
 ## Presets
 
-- `editorial-reveal`: calm mask reveal, slight tracking/position settle.
-- `kinetic-snap`: staggered word or line entries with crisp overshoot.
+- `title-clean`: restrained title reveal with strong final still.
+- `editorial-reveal`: calm mask reveal, line rhythm, slight position settle.
+- `quote-lift`: quote enters by line, attribution follows after a readable beat.
+- `kinetic-word-choreography`: one active word drives layout, scale, or rhythm.
+- `kinetic-snap`: semantic active word hits sharply, support text stays calmer.
 - `typewriter-clean`: stepped character/word reveal with a soft cursor/accent.
-- `quote-lift`: quote fades/slides in by line, attribution follows after a beat.
 - `handwritten-trace`: path reveal following writing direction, subtle ink hold.
 - `text-morph-lite`: crossfade/mask/position replacement unless paths are safe.
+- `text-path-follow`: text follows a curve or camera-framed path while readable.
 - `numeric-pop`: numbers scale or count in, supporting labels settle softly.
 
 ## Timing And Easing
@@ -35,6 +74,8 @@ handwritten/path reveals, text morphs, counters, and short message-led scenes.
 - Typewriter/handwritten: pace by readability, not constant path length alone.
 - Use ease-out for entrances, stepped timing for typewriter, and low overshoot
   only for kinetic/playful styles.
+- Kinetic typography: build around phrase-level beats; active words can move
+  more strongly while anchor/support text holds the composition.
 
 ## Ask Only When Needed
 
@@ -49,6 +90,13 @@ handwritten/path reveals, text morphs, counters, and short message-led scenes.
 - Keep line lengths short enough for the canvas and target use.
 - Use masks or shape reveals for premium title work; use opacity/position
   stagger for simpler captions.
+- For kinetic typography, define anchor, support, and active text roles before
+  keyframing.
+- Avoid applying the same opacity/position/scale entrance to every word. Offset
+  properties and timing according to meaning, reading order, and emphasis.
+- Use lines, dots, dividers, glows, and ornaments only when they guide reading
+  order, reveal text, emphasize a word, support rhythm, or reinforce semantic
+  motion.
 - Use path morphing only with compatible path structures; otherwise use
   replacement, reveal, or crossfade.
 - Expose useful slots: text content when supported, accent color, background
@@ -61,10 +109,18 @@ handwritten/path reveals, text morphs, counters, and short message-led scenes.
 - The final frame is visually weaker than the motion.
 - Handwritten reveals move against the natural stroke direction.
 - Text morphs warp because path structures are incompatible.
+- Kinetic typography is only a uniform word-by-word entrance.
+- Every word moves equally, so no active phrase leads the viewer.
+- Decorative accents fill space but do not guide reading or meaning.
 
 ## Acceptance Checks
 
 - First and final frames are clean still compositions.
 - Text is readable at all inspected frames.
 - Staggering supports meaning instead of making words hard to follow.
+- Kinetic prompts have an active word or phrase with semantic, type-driven
+  motion.
+- Anchor/support text stabilizes the composition and does not compete with the
+  active phrase.
+- Accents support reading rhythm, reveal, emphasis, or semantic motion.
 - No text touches unsafe edges or clips during motion.

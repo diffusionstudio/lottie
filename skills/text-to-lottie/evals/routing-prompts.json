@@ -89,6 +89,148 @@
     ]
   },
   {
+    "query": "Make a clean title card that says Launch Week.",
+    "expected_references": [
+      "references/player-contract.md",
+      "references/recipe-typography.md",
+      "references/design-taste.md",
+      "references/motion-taste.md"
+    ],
+    "primary_recipe": "references/recipe-typography.md",
+    "avoid_references": [
+      "references/recipe-product-promo.md",
+      "references/recipe-diagram-technical.md"
+    ]
+  },
+  {
+    "query": "Animate this quote with an editorial reveal and attribution.",
+    "expected_references": [
+      "references/player-contract.md",
+      "references/recipe-typography.md",
+      "references/design-taste.md",
+      "references/motion-taste.md"
+    ],
+    "primary_recipe": "references/recipe-typography.md",
+    "avoid_references": [
+      "references/recipe-logo.md",
+      "references/recipe-loaders-icons.md"
+    ]
+  },
+  {
+    "query": "Create kinetic typography for 'fall fast, rise stronger'.",
+    "expected_references": [
+      "references/player-contract.md",
+      "references/recipe-typography.md",
+      "references/design-taste.md",
+      "references/motion-taste.md"
+    ],
+    "primary_recipe": "references/recipe-typography.md",
+    "avoid_references": [
+      "references/recipe-diagram-technical.md",
+      "references/recipe-product-promo.md"
+    ]
+  },
+  {
+    "query": "Draw this handwritten word on like ink.",
+    "expected_references": [
+      "references/player-contract.md",
+      "references/recipe-typography.md",
+      "references/design-taste.md",
+      "references/motion-taste.md"
+    ],
+    "primary_recipe": "references/recipe-typography.md",
+    "avoid_references": [
+      "references/recipe-svg-animation.md",
+      "references/recipe-product-promo.md"
+    ]
+  },
+  {
+    "query": "Morph OPEN into DONE without warping.",
+    "expected_references": [
+      "references/player-contract.md",
+      "references/recipe-typography.md",
+      "references/design-taste.md",
+      "references/motion-taste.md"
+    ],
+    "primary_recipe": "references/recipe-typography.md",
+    "avoid_references": [
+      "references/recipe-diagram-technical.md",
+      "references/recipe-loaders-icons.md"
+    ]
+  },
+  {
+    "query": "Make text follow a curved path while the camera pushes in.",
+    "expected_references": [
+      "references/player-contract.md",
+      "references/recipe-typography.md",
+      "references/recipe-camera-scene-motion.md",
+      "references/design-taste.md",
+      "references/motion-taste.md"
+    ],
+    "primary_recipe": "references/recipe-typography.md",
+    "avoid_references": [
+      "references/recipe-product-promo.md",
+      "references/recipe-diagram-technical.md"
+    ]
+  },
+  {
+    "query": "Create a clean technical architecture diagram animation for a checkout flow.",
+    "expected_references": [
+      "references/player-contract.md",
+      "references/recipe-diagram-technical.md",
+      "references/design-taste.md",
+      "references/motion-taste.md"
+    ],
+    "primary_recipe": "references/recipe-diagram-technical.md",
+    "avoid_references": [
+      "references/recipe-product-promo.md",
+      "references/recipe-visual-effects.md"
+    ]
+  },
+  {
+    "query": "Make a premium product explainer showing three steps and a final CTA.",
+    "expected_references": [
+      "references/player-contract.md",
+      "references/recipe-product-promo.md",
+      "references/design-taste.md",
+      "references/motion-taste.md"
+    ],
+    "primary_recipe": "references/recipe-product-promo.md",
+    "avoid_references": [
+      "references/recipe-diagram-technical.md",
+      "references/recipe-svg-animation.md"
+    ]
+  },
+  {
+    "query": "Animate a technical SVG diagram with callouts, but keep it polished and presentation-ready.",
+    "expected_references": [
+      "references/player-contract.md",
+      "references/recipe-diagram-technical.md",
+      "references/svg-compatibility.md",
+      "references/design-taste.md",
+      "references/motion-taste.md"
+    ],
+    "primary_recipe": "references/recipe-diagram-technical.md",
+    "avoid_references": [
+      "references/recipe-logo.md",
+      "references/recipe-product-promo.md"
+    ]
+  },
+  {
+    "query": "Create a clean data pipeline Lottie without making it look like a dark cyber grid.",
+    "expected_references": [
+      "references/player-contract.md",
+      "references/recipe-diagram-technical.md",
+      "references/design-taste.md",
+      "references/motion-taste.md"
+    ],
+    "primary_recipe": "references/recipe-diagram-technical.md",
+    "avoid_references": [
+      "references/recipe-product-promo.md",
+      "references/recipe-visual-effects.md"
+    ]
+  },
+  {
     "query": "Fix this Lottie JSON keyframe issue and make it render in Skottie.",
     "expected_references": [
       "references/player-contract.md",

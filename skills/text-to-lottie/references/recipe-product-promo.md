@@ -14,8 +14,20 @@ release notes visuals, social promos, and short marketing-style Lottie scenes.
 - Treat the product/feature as the hero.
 - Use full-frame composition unless the user asks for a transparent asset.
 - Keep copy short and readable; animate one message clearly.
+- Avoid generic launch-card layouts when no product signal is visible.
 - Expose slots for headline, subhead, accent color, and background color when
   useful.
+
+## Before Authoring
+
+- Define the hero: product screenshot, feature surface, logo, object, or single
+  message.
+- Define the product signal: UI fragment, thumbnail, feature callout, data chip,
+  branded shape, or recognizable workflow step.
+- Define the final poster frame: headline position, product scale, CTA/message
+  focus, and supporting detail.
+- Decide which accents support the offer. Remove decoration that does not frame,
+  reveal, or emphasize the product.
 
 ## Presets
 
@@ -45,6 +57,10 @@ release notes visuals, social promos, and short marketing-style Lottie scenes.
 - Use camera scene motion as secondary when the prompt asks for pan/zoom/tour.
 - Use visual effects as secondary for glow, glass, sweep, or burst treatments.
 - Avoid stuffing too many feature points into one short scene.
+- Replace empty cards with screenshot detail, mini UI rows, product thumbnails,
+  feature labels, metric chips, or branded placeholders with clear meaning.
+- Use supporting chips or callouts only when they clarify the feature or offer.
+- Keep the final frame strong enough to work as a static product graphic.
 
 ## Common Failure Modes
 
@@ -52,10 +68,14 @@ release notes visuals, social promos, and short marketing-style Lottie scenes.
 - Too much copy appears too fast.
 - Effects compete with the product.
 - Final frame lacks a clear offer or feature focus.
+- Product surface is too small, blank, or abstract to identify.
+- Empty cards and decorative accents make the scene feel template-like.
 
 ## Acceptance Checks
 
 - Product/feature is unmistakably the hero.
+- The scene includes product-specific visual information, not only generic
+  containers.
 - Copy is readable and not overcrowded.
 - Final frame works as a poster frame.
 - Motion feels polished, not like a template dump.

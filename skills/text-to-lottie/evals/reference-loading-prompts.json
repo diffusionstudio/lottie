@@ -35,6 +35,24 @@
     ]
   },
   {
+    "query": "Make text follow a curved path while the camera pushes in.",
+    "must_read": [
+      "references/player-contract.md",
+      "references/recipe-typography.md",
+      "references/recipe-camera-scene-motion.md",
+      "references/design-taste.md",
+      "references/motion-taste.md"
+    ],
+    "may_read": [
+      "references/lottie-spec-map.md"
+    ],
+    "must_not_read": [
+      "references/recipe-product-promo.md",
+      "references/recipe-diagram-technical.md",
+      "references/svg-compatibility.md"
+    ]
+  },
+  {
     "query": "Start a reusable lower-third project with name and role slots.",
     "must_read": [
       "references/player-contract.md",

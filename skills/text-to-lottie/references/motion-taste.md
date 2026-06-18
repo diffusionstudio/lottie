@@ -45,6 +45,19 @@ Use this reference when choosing pacing, easings, staging, or animation style.
 - Scrub around the settle. The final 10-20 percent of motion should feel
   intentional, not like a numerical drift.
 
+## Typography Choreography
+
+- Treat kinetic typography as phrase performance, not uniform text entrance.
+- Assign anchor, support, and active text. Let the active word or phrase carry
+  the strongest motion while support text stays calmer.
+- Use semantic easing and spacing: sharp words can hit harder, soft words can
+  settle gently, heavy words can land lower, and flowing words can travel
+  continuously.
+- Offset position, scale, mask, opacity, and layout timing so words relate to
+  the phrase instead of sharing identical keyframes.
+- Preserve reading order. Expressive motion should make the phrase clearer, not
+  harder to parse.
+
 ## Camera, Parallax, And Scene Motion
 
 - Treat camera motion as the viewer's attention, not decoration.
@@ -80,3 +93,5 @@ Use this reference when choosing pacing, easings, staging, or animation style.
 - Secondary motion should never distract from the requested message.
 - If an animation feels generic, adjust stagger origin, easing intent, or the
   final settle before adding more effects.
+- For kinetic typography, reject motion where every word uses the same entrance
+  timing and property changes unless the prompt asks for a minimal reveal.

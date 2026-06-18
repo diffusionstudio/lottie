@@ -17,6 +17,8 @@ is the main deliverable.
 
 - Keep the base composition readable without the effect.
 - Use effects to reveal, emphasize, or transition, not as constant decoration.
+- Every effect needs a job: reveal, emphasis, transition, state feedback, or
+  material behavior.
 - Prefer simple Lottie shapes, gradients, masks, and opacity layers over
   renderer-specific filters.
 - Preserve transparent output when used with logos, icons, overlays, or SVG
@@ -30,6 +32,21 @@ is the main deliverable.
 - `gradient-fill`: color/fill transition moving across a shape or word.
 - `bubble-burst`: playful circles expand/fade around a success or reveal.
 - `spark-accent`: tiny highlights appear around a final settle.
+
+## Purpose Pairings
+
+- Replace random glow with a focal halo tied to the hero subject, active state,
+  or final settle.
+- Replace loose circles with action-state feedback, ports, badges, particles
+  from a burst origin, or remove them.
+- Replace generic sweeps with masked material passes across a specific surface:
+  logo edge, text face, card glass, product screen, or metal rim.
+- Replace muddy gradients with semantic fills: progress, selection, heat,
+  transfer, reveal, or brand color transition.
+- Treat "premium" as restraint, crisp masking, material consistency, and a clean
+  final frame, not more glow.
+- Treat "technical" as precision, structure, and information clarity, not neon
+  decoration.
 
 ## Timing And Easing
 
@@ -52,6 +69,8 @@ is the main deliverable.
 - Clip/sweep effects with masks only when necessary and verify all frames.
 - Use additive-looking color choices cautiously; Skottie/browser output can vary.
 - Limit effects on text until legibility is confirmed.
+- For typography, use accents or effects only when they support reading rhythm,
+  text reveal, word emphasis, or semantic motion.
 
 ## Common Failure Modes
 
@@ -59,10 +78,15 @@ is the main deliverable.
 - Glow or sweep clips at canvas edges.
 - Gradient/fill effects become muddy.
 - Playful bursts feel random because they are not tied to an action beat.
+- Decorative effects hide weak composition instead of improving it.
+- Premium treatment becomes a pile of glow, glass, and gradients.
+- Typography effects become filler instead of supporting the phrase.
 
 ## Acceptance Checks
 
 - Effect supports the primary recipe's message.
+- Effect purpose is identifiable even in the final frame.
+- Typography effects help the viewer read or feel the phrase.
 - Final frame is clean after the effect passes.
 - No effect layer creates unintended background pixels.
 - Skottie render matches the intended intensity and clipping.

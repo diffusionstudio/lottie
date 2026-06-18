@@ -3,6 +3,21 @@
 Use this reference when composition, typography, layout, color, or brand polish
 matters.
 
+## Concept Pass
+
+Before authoring complex diagram or product scenes, define the visual system,
+focal point, node/detail strategy, hierarchy, final-frame composition goal, and
+the purpose of any decoration. If those choices are not clear, the design will
+usually drift toward generic shapes.
+
+- Translate "clean", "technical", or "premium" into a specific system: editorial
+  light, product UI, schematic minimal, branded system map, dense dashboard
+  detail, or presentation-grade explainer.
+- Choose the main still image first. Motion should reveal and clarify that
+  composition, not rescue a weak final frame.
+- Decide which elements carry meaning. Decoration should either group content,
+  show state, direct attention, reinforce brand, or be removed.
+
 ## Composition Defaults
 
 - Start with a clear hierarchy: primary subject, supporting detail, accent.
@@ -14,6 +29,21 @@ matters.
 - Use negative space as an active design element; do not fill every empty area.
 - Align to a simple grid, baseline, or optical axis. Break alignment only when
   the concept clearly benefits.
+
+## Anti-Generic Replacements
+
+- Do not default to dark grids, blue arrows, empty cards, monospaced labels, or
+  decorative circles for technical work. Use a chosen visual system with clear
+  information hierarchy.
+- Replace empty rounded cards with meaningful node details: icons, mini UI
+  fragments, step numbers, labels, thumbnails, status marks, metrics, or data
+  hints.
+- Replace arbitrary accent circles with ports, badges, state indicators,
+  handles, highlights, or remove them.
+- Replace decorative grid wallpaper with structural alignment, section bands,
+  subtle dividers, real axes, or whitespace.
+- Replace generic glow with a focal halo, active-state emphasis, masked material
+  pass, or no effect.
 
 ## Placement And Framing
 
@@ -32,9 +62,12 @@ matters.
   playful, or premium.
 - Keep text readable at the intended size. Avoid crowding edges.
 - Split long text into deliberate lines; do not let line breaks feel accidental.
+- Establish type hierarchy with size, weight, case, and spacing before adding
+  effects.
 - Balance text blocks optically: line length, rag, weight, and spacing should
   feel stable in the final frame.
 - Align baselines and cap heights when mixing labels, names, numbers, or icons.
+- Use monospaced type only for code, data, terminals, or system-like content.
 - Use weight, size, and timing before adding decorative elements.
 - Convert to paths when exact font rendering matters and font support is
   uncertain.
@@ -57,3 +90,5 @@ matters.
 - Confirm no text, stroke, glow, or reveal mask clips during motion.
 - Ensure the motion path and visual hierarchy point to the same subject.
 - Prefer fewer, better elements over many weak accents.
+- Reject placeholder-looking scenes even when they render correctly. If a node,
+  label, or accent does not communicate meaning, refine it or remove it.

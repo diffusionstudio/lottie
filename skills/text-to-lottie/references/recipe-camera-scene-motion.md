@@ -15,6 +15,8 @@ hero pushes, product screenshot tours, and animated scene framing.
 - Keep the main subject readable throughout the move.
 - Use full-frame background policy unless the result is a transparent asset.
 - Treat camera motion as attention direction, not decoration.
+- Use camera motion to improve attention and final-frame framing, not to hide a
+  weak composition.
 
 ## Presets
 
@@ -43,6 +45,8 @@ hero pushes, product screenshot tours, and animated scene framing.
 - Keep scale changes modest unless the move is the concept.
 - Counter-animate text or labels if camera motion makes them hard to read.
 - Use parallax only when layered depth exists or can be built cleanly.
+- If the final frame feels like an accidental crop, revise the layout or camera
+  endpoint before adding more movement.
 
 ## Common Failure Modes
 
@@ -50,6 +54,7 @@ hero pushes, product screenshot tours, and animated scene framing.
 - Parallax layers move without a clear depth hierarchy.
 - Motion sickness from too much scale/position change.
 - Final frame feels like an accidental crop.
+- Camera motion adds energy but does not improve hierarchy or framing.
 
 ## Acceptance Checks
 
@@ -57,3 +62,4 @@ hero pushes, product screenshot tours, and animated scene framing.
 - Important text remains readable or resolves quickly.
 - First and final frames are clean compositions.
 - Camera motion enhances the message instead of hiding weak layout.
+- Final camera position lands on the strongest still frame.

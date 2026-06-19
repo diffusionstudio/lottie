@@ -12,6 +12,8 @@ explainer graphics, process steps, and data/connection reveals.
 ## Defaults
 
 - Prioritize clarity over decoration.
+- Follow the object budget in `design-taste.md`: start with the smallest set of
+  nodes, paths, labels, and accents that explains the system.
 - Reveal in the order the viewer should understand the system.
 - Do not treat "technical" as dark grid, blue arrows, empty rounded cards, and
   decorative circles. Pick a concrete visual system.
@@ -29,6 +31,8 @@ explainer graphics, process steps, and data/connection reveals.
   sequence, metric, UI fragment, icon, or label.
 - Decide what the lines mean: data flow, dependency, sequence, ownership, or
   state transition.
+- Keep believability separate from density: use coherent system states and
+  clear workflow labels instead of fake technical micro-detail.
 
 ## Presets
 
@@ -64,6 +68,8 @@ explainer graphics, process steps, and data/connection reveals.
   style to show primary and secondary flow.
 - Use grids as alignment structure or axes, not decorative wallpaper.
 - Turn floating circles into ports, status indicators, badges, or remove them.
+- If the final frame feels crowded, reduce nodes, merge labels, or emphasize the
+  primary path before adding more detail.
 
 ## Common Failure Modes
 
@@ -75,6 +81,7 @@ explainer graphics, process steps, and data/connection reveals.
 - Dark grid plus blue arrow chains make the scene feel generic unless requested.
 - Large blank regions weaken the final poster frame.
 - Fake complexity adds visual noise without explaining the system.
+- Dense meaningful-looking detail makes the system harder to understand.
 
 ## Acceptance Checks
 
@@ -84,4 +91,5 @@ explainer graphics, process steps, and data/connection reveals.
 - Nodes contain enough information to be meaningful without the animation.
 - The final topology feels balanced, with intentional negative space.
 - Decoration has a job: grouping, state, brand, attention, or structure.
+- Detail improves comprehension without crowding the final composition.
 - SVG source diagrams preserve holes, clipping, and intersections.

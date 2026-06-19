@@ -15,6 +15,8 @@ handwritten/path reveals, text morphs, counters, and short message-led scenes.
 - Default to transparent background for overlay/title elements; use a slotted
   background for full-frame title cards.
 - Prefer readable hierarchy over novelty.
+- Establish type hierarchy, line composition, and final-frame balance before
+  adding accents or effects.
 - Convert text to paths when exact font rendering matters or font availability
   is uncertain.
 
@@ -88,6 +90,8 @@ handwritten/path reveals, text morphs, counters, and short message-led scenes.
 
 - Break text into semantic lines, words, or glyph groups based on the preset.
 - Keep line lengths short enough for the canvas and target use.
+- Keep one focal line or phrase dominant; support text should clarify rather
+  than compete.
 - Use masks or shape reveals for premium title work; use opacity/position
   stagger for simpler captions.
 - For kinetic typography, define anchor, support, and active text roles before
@@ -112,6 +116,8 @@ handwritten/path reveals, text morphs, counters, and short message-led scenes.
 - Kinetic typography is only a uniform word-by-word entrance.
 - Every word moves equally, so no active phrase leads the viewer.
 - Decorative accents fill space but do not guide reading or meaning.
+- Type accents or effects arrive before the hierarchy and line breaks are
+  resolved.
 
 ## Acceptance Checks
 
@@ -123,4 +129,6 @@ handwritten/path reveals, text morphs, counters, and short message-led scenes.
 - Anchor/support text stabilizes the composition and does not compete with the
   active phrase.
 - Accents support reading rhythm, reveal, emphasis, or semantic motion.
+- Type hierarchy, line breaks, and optical placement pass before effects are
+  considered polish.
 - No text touches unsafe edges or clips during motion.

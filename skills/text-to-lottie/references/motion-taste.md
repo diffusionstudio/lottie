@@ -2,6 +2,19 @@
 
 Use this reference when choosing pacing, easings, staging, or animation style.
 
+## Contents
+
+- Principles
+- Timing Defaults
+- Easing Intent
+- Choreography
+- Motion Economy
+- Typography Choreography
+- Camera, Parallax, And Scene Motion
+- Path Reveals And Loops
+- Style Presets
+- Checks
+
 ## Principles
 
 - Stage motion in readable beats: anticipation, action/reveal, settle.
@@ -44,6 +57,16 @@ Use this reference when choosing pacing, easings, staging, or animation style.
 - Do not animate every property on every layer. Stillness gives motion contrast.
 - Scrub around the settle. The final 10-20 percent of motion should feel
   intentional, not like a numerical drift.
+
+## Motion Economy
+
+- Motion should reinforce the same hierarchy as the final frame: focal subject
+  strongest, support calmer, accents lowest priority.
+- Animate fewer properties when that produces a clearer read.
+- If movement makes the scene feel busy, crowded, or unfocused, simplify the
+  visual structure before adding more motion.
+- Effects, camera moves, and staggers should never compensate for weak layout.
+  Revise the composition first.
 
 ## Typography Choreography
 
@@ -89,6 +112,8 @@ Use this reference when choosing pacing, easings, staging, or animation style.
 
 - Midpoint should communicate what is happening, not only look like transition
   blur.
+- The final settle should land in the strongest composition, not only stop on a
+  valid frame.
 - Loop start/end should be invisible unless a reset is intentional.
 - Secondary motion should never distract from the requested message.
 - If an animation feels generic, adjust stagger origin, easing intent, or the

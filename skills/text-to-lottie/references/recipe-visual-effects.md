@@ -19,6 +19,8 @@ is the main deliverable.
 - Use effects to reveal, emphasize, or transition, not as constant decoration.
 - Every effect needs a job: reveal, emphasis, transition, state feedback, or
   material behavior.
+- Effects cannot compensate for weak hierarchy, spacing, or final-frame
+  composition. Revise the base design first.
 - Prefer simple Lottie shapes, gradients, masks, and opacity layers over
   renderer-specific filters.
 - Preserve transparent output when used with logos, icons, overlays, or SVG
@@ -81,11 +83,13 @@ is the main deliverable.
 - Decorative effects hide weak composition instead of improving it.
 - Premium treatment becomes a pile of glow, glass, and gradients.
 - Typography effects become filler instead of supporting the phrase.
+- Effect layers make the object budget feel crowded.
 
 ## Acceptance Checks
 
 - Effect supports the primary recipe's message.
 - Effect purpose is identifiable even in the final frame.
+- Base composition remains strong if the effect is removed.
 - Typography effects help the viewer read or feel the phrase.
 - Final frame is clean after the effect passes.
 - No effect layer creates unintended background pixels.

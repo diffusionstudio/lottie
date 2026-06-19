@@ -15,6 +15,8 @@ release notes visuals, social promos, and short marketing-style Lottie scenes.
 - Use full-frame composition unless the user asks for a transparent asset.
 - Keep copy short and readable; animate one message clearly.
 - Avoid generic launch-card layouts when no product signal is visible.
+- Follow the object budget in `design-taste.md`: hero first, support detail
+  second, accent system last.
 - Expose slots for headline, subhead, accent color, and background color when
   useful.
 
@@ -26,6 +28,8 @@ release notes visuals, social promos, and short marketing-style Lottie scenes.
   branded shape, or recognizable workflow step.
 - Define the final poster frame: headline position, product scale, CTA/message
   focus, and supporting detail.
+- Define believability through coherent product state, workflow, copy, and
+  hierarchy, not by adding more interface fragments.
 - Decide which accents support the offer. Remove decoration that does not frame,
   reveal, or emphasize the product.
 
@@ -60,6 +64,8 @@ release notes visuals, social promos, and short marketing-style Lottie scenes.
 - Replace empty cards with screenshot detail, mini UI rows, product thumbnails,
   feature labels, metric chips, or branded placeholders with clear meaning.
 - Use supporting chips or callouts only when they clarify the feature or offer.
+- If the scene feels crowded, simplify the offer, enlarge the hero, or merge
+  support details before adding more product chrome.
 - Keep the final frame strong enough to work as a static product graphic.
 
 ## Common Failure Modes
@@ -70,12 +76,14 @@ release notes visuals, social promos, and short marketing-style Lottie scenes.
 - Final frame lacks a clear offer or feature focus.
 - Product surface is too small, blank, or abstract to identify.
 - Empty cards and decorative accents make the scene feel template-like.
+- Believable-looking UI detail is dense but does not explain the product.
 
 ## Acceptance Checks
 
 - Product/feature is unmistakably the hero.
 - The scene includes product-specific visual information, not only generic
   containers.
+- Product/content detail is coherent and readable without becoming crowded.
 - Copy is readable and not overcrowded.
 - Final frame works as a poster frame.
 - Motion feels polished, not like a template dump.

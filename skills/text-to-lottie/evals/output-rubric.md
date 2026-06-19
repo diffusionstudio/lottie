@@ -37,10 +37,16 @@ normal animation work.
 
 - Frame `0`, midpoint, and `op - 1` are visually intentional.
 - Final frame works as a still composition or poster frame.
+- Design quality is a completion blocker. A scene that parses and renders still
+  fails if hierarchy, spacing, color restraint, object necessity, or final-frame
+  composition is weak.
 - Complex diagram and product scenes include a concept pass before authoring:
   visual system, focal point, node/detail strategy, hierarchy, final-frame goal,
   and decoration purpose.
+- Designed scenes use an object budget: one focal subject, one support layer,
+  and one accent system unless the concept clearly needs more.
 - Motion uses purposeful easing, readable staging, and clear choreography.
+- Motion reinforces the same hierarchy as the final frame.
 - UI and state feedback feel responsive rather than slow or theatrical.
 - Product and promo scenes keep the product/message as the hero.
 - Effects support the primary message and do not become noise.
@@ -55,6 +61,21 @@ normal animation work.
 - Settled SVG-derived Lottie frames are compared against the source artwork.
 - Final output feels production-ready rather than placeholder-like.
 
+## Design Judgment Blockers
+
+- Fail outputs that render correctly but have no clear focal subject.
+- Fail crowded compositions, even when individual details appear meaningful.
+- Fail scenes where support elements compete with the main message.
+- Fail weak final frames that feel like accidental stopping points.
+- Fail typography with accidental line breaks, unstable placement, weak
+  hierarchy, or crowded spacing.
+- Fail color/effect overload where accents compete or "premium" means more
+  glow, glass, gradient, or noise.
+- Fail product/content scenes where believability comes from density rather
+  than coherent state, workflow, copy, and hierarchy.
+- If design QA fails, the agent should simplify and revise before calling the
+  task complete.
+
 ## Anti-Generic Quality
 
 - Fail diagrams that default to dark grid, blue arrows, empty rounded cards,
@@ -68,6 +89,7 @@ normal animation work.
   when those terms produce concrete design decisions, not stock visual tropes.
 - Prefer content-rich nodes, balanced topology, strong type hierarchy, optical
   alignment, and intentional negative space.
+- Prefer fewer stronger objects over many meaningful-looking details.
 
 ## Prompt Robustness Cases
 
@@ -79,3 +101,8 @@ normal animation work.
   grid."
 - "Create kinetic typography for 'fall fast, rise stronger'."
 - "Make the word SNAP hit sharply, then settle."
+- "Create a premium product feature animation without decorative filler."
+- "Make a clean technical workflow explainer with only meaningful visual
+  detail."
+- "Create a polished title scene with strong hierarchy and restrained color."
+- "Animate a product UI flow that feels believable, not crowded."

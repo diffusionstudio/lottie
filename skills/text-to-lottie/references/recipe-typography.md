@@ -20,8 +20,10 @@ handwritten/path reveals, text morphs, counters, and short message-led scenes.
 - Choose the type voice deliberately: serif for human/editorial authority,
   grotesque for product/function, monospace for technical labels, expressive
   display type when the word itself is the subject.
-- Convert text to paths when exact font rendering matters or font availability
-  is uncertain.
+- Convert fixed prompt text to vector/shape artwork immediately. In the current
+  player, native Lottie text and text slots render reliably only when matching
+  font blobs are supplied to Skottie, and the scene loader does not pass font
+  files by default.
 
 ## Category Distinctions
 
@@ -113,6 +115,8 @@ handwritten/path reveals, text morphs, counters, and short message-led scenes.
   replacement, reveal, or crossfade.
 - Expose useful slots: text content when supported, accent color, background
   color for full-frame cards, and timing/scale only when user editing matters.
+- Use native text slots only when editable text is explicitly required and font
+  asset loading has been implemented and verified in the official player.
 
 ## Common Failure Modes
 

@@ -129,6 +129,20 @@ Slot value types map to controls:
 
 Slot types must match the properties that reference them.
 
+## Text Rendering Fast Path
+
+- Native Lottie text layers and text slots are not reliable in this player by
+  default. CanvasKit exposes text slots, but text still needs font data at
+  Skottie animation creation time.
+- The current scene loader passes discovered image assets to
+  `MakeManagedAnimation`; it does not discover or pass scene font files.
+- Local CanvasKit verification showed native text renders transparent without a
+  font blob and renders once the matching font blob is supplied.
+- For fixed prompt text, do not spend time trying native text first. Author text
+  as vector/shape artwork immediately.
+- Use native text slots only when editable text is explicitly required and font
+  asset loading has been implemented and verified in the official player.
+
 ## Background Policy
 
 - Full-frame standalone compositions should include a visible background layer

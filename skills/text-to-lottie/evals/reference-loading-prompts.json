@@ -1,5 +1,26 @@
 [
   {
+    "query": "Create a text-heavy pricing comparison card with fixed Inter typography and exact Skottie rendering.",
+    "must_read": [
+      "references/player-contract.md",
+      "references/recipe-typography.md",
+      "references/design-taste.md",
+      "references/motion-taste.md"
+    ],
+    "may_read": [
+      "references/lottie-spec-map.md"
+    ],
+    "must_not_read": [
+      "references/recipe-logo.md",
+      "references/recipe-diagram-technical.md",
+      "references/recipe-product-promo.md"
+    ],
+    "expected_behavior": [
+      "author fixed text as vector or shape artwork",
+      "do not spend time trying native text slots unless editable text is explicitly required"
+    ]
+  },
+  {
     "query": "Animate this SVG icon as a loopable loader.",
     "must_read": [
       "references/player-contract.md",

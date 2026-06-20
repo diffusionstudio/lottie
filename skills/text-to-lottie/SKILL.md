@@ -85,6 +85,11 @@ kinetic title with glass sweep uses typography plus visual effects.
   when they improve the properties panel.
 - For SVG input, preserve the viewBox, normalize styling, watch fill rules and
   intersections, and verify the result in Skottie.
+- Native Lottie text/text slots are unreliable in this player unless font blobs
+  are supplied to Skottie. The current scene loader discovers image assets only,
+  so author fixed prompt text as vector/shape text immediately. Use native text
+  slots only when editable text is explicitly required and font loading has been
+  implemented and verified.
 
 ## Verification
 

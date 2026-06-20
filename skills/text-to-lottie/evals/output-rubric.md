@@ -32,6 +32,10 @@ normal animation work.
   to transparent output unless the user asks for a background.
 - Slots are type-compatible with their referenced properties.
 - Controls expose useful edits without cluttering the panel.
+- Fixed prompt text is authored as vector/shape artwork without first spending
+  time on native text-slot experiments.
+- Native text slots are reserved for explicitly editable copy after font asset
+  loading has been implemented and verified in the local player.
 
 ## Motion And Design Quality
 
@@ -169,6 +173,8 @@ normal animation work.
 - "Make a clean technical workflow explainer with only meaningful visual
   detail."
 - "Create a polished title scene with strong hierarchy and restrained color."
+- "Create a text-heavy pricing comparison card with fixed Inter typography and
+  exact Skottie rendering."
 - "Animate a product UI flow that feels believable, not crowded."
 - "Animate these three KPIs into a premium stat card."
 - "Create a pitch-slide chart showing revenue growing 11% month over month."

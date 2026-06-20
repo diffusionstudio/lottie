@@ -83,6 +83,9 @@ normal animation work.
 - Fail weak final frames that feel like accidental stopping points.
 - Fail typography with accidental line breaks, unstable placement, weak
   hierarchy, or crowded spacing.
+- Fail mixed-size text rows aligned on a shared baseline instead of cap-center,
+  single runs not optically centered in their container, or stacked title/subline
+  blocks with tight or arbitrary vertical spacing.
 - Fail color/effect overload where accents compete or "premium" means more
   glow, glass, gradient, or noise.
 - Fail product/content scenes where believability comes from density rather
@@ -104,6 +107,8 @@ normal animation work.
   a short Lottie.
 - Figures count up with baked keyframes, tabular numerals, and labels/units
   arriving after the number resolves.
+- Row label and value are cap-center aligned and optically centered in the pill,
+  card, or row; row and block spacing follow a consistent vertical rhythm.
 - Chart geometry reveals by chart logic: bars grow, lines draw, segments widen,
   dots populate, rings nest or emanate, and labels sync to geometry.
 - Serious data uses calm ease-out and no bounce.

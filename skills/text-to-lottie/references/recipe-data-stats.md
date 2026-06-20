@@ -70,12 +70,19 @@ textures, and simple chart animations.
 - Serious data uses bouncy or theatrical motion.
 - Dashboard mock looks dense but the state is incoherent.
 - Rounded bars/cards stretch because they were scaled instead of revealed.
+- Label and value in a row share a baseline, so the smaller label sinks below the
+  larger value instead of reading as one aligned row.
+- Label/figure spacing or row spacing is eyeballed, so the vertical rhythm looks
+  uneven.
 
 ## Acceptance Checks
 
 - The data archetype matches the metric's job.
 - The headline states the point and the data confirms it.
 - Figures are direct-labeled, counted up, and readable.
+- Label and value in each row are cap-center aligned and optically centered in the
+  pill, card, or row, and the value stays centered through the count-up.
+- Stacked label/figure spacing and row-to-row spacing follow a consistent rhythm.
 - Chart geometry and numeric labels resolve together.
 - Palette uses semantic color, not decorative color.
 - Final frame works as a clear still data slide.

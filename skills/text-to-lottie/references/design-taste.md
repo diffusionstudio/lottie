@@ -139,7 +139,16 @@ not clear, the design will usually drift toward generic shapes.
   effects.
 - Balance text blocks optically: line length, rag, weight, and spacing should
   feel stable in the final frame.
-- Align baselines and cap heights when mixing labels, names, numbers, or icons.
+- When two text runs of different sizes share a row (label and value, name and
+  number, icon and caption), align them by their cap-height centers, not by a
+  shared baseline. A shared baseline makes the smaller run appear to sink. Center
+  a single run inside a container by its cap-height box, not the em box or the
+  baseline. See `player-contract.md` "Vector Text Vertical Placement" for the
+  formula, since vector text has no auto-centering.
+- Set vertical spacing between stacked text blocks relative to type size, not by
+  eyeballed pixels. A workable default for a headline and the line directly below
+  it is a gap of about 0.5 to 0.8 of the headline cap height; keep one consistent
+  spacing step between sibling blocks so the rhythm reads deliberate.
 - Use monospaced type only for code, data, terminals, or system-like content.
 - Use weight, size, and timing before adding decorative elements.
 - Convert to paths when exact font rendering matters and font support is
@@ -235,6 +244,11 @@ not clear, the design will usually drift toward generic shapes.
   primary, support, and accent roles obvious.
 - Check typography: line breaks, rag, casing, weight, tracking, and label
   placement should support the message rather than fill available space.
+- Check vertical alignment and rhythm: mixed-size runs sharing a row should be
+  cap-center aligned, single runs should be optically centered in their
+  containers, and the spacing between a title and its subline (or any stacked
+  blocks) should look intentional rather than tight or arbitrary. Inspect rows
+  zoomed in, since small misalignments hide at full-frame scale.
 - Check color roles: each saturated or high-contrast color should indicate
   brand, state, category, comparison, or focus.
 - Check object necessity: remove, merge, resize, clarify, or rebalance weak

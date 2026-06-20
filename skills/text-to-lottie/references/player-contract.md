@@ -143,6 +143,21 @@ Slot types must match the properties that reference them.
 - Use native text slots only when editable text is explicitly required and font
   asset loading has been implemented and verified in the official player.
 
+## Vector Text Vertical Placement
+
+Vector text has no line-height or auto-centering. You place every glyph by hand,
+so compute the baseline from the font's cap height instead of eyeballing it.
+
+- Derive cap height from the font, not a guessed number:
+  `capEm = sCapHeight / unitsPerEm`, then `cap = capEm * size`. If the font lacks
+  the metric, fall back to `capEm ≈ 0.7` (use x-height `≈ 0.52em` for all-lowercase
+  runs).
+- To vertically center a run in a container whose center is `cy`:
+  `baseline = cy + cap / 2`.
+- For a row holding two runs of different sizes (for example a small label and a
+  large value), center each run on the shared center line using its **own** cap
+  height. A shared baseline makes the smaller run sink below the larger one.
+
 ## Background Policy
 
 - Full-frame standalone compositions should include a visible background layer
@@ -173,6 +188,11 @@ not a substitute for motion review.
 - Design review: inspect frame `0`, midpoint, `op - 1`, and any major semantic
   still. Check focal point, placement, spacing, hierarchy, typography, color
   roles, object necessity, and final-frame strength.
+- Text alignment review: inspect text rows zoomed in, not only at full-frame. A
+  few pixels of vertical misalignment are invisible at composition scale. Confirm
+  that mixed-size runs sharing a row are cap-center aligned, that single runs are
+  optically centered in their container, and that stacked blocks (such as a
+  headline and its subline) follow an intentional vertical rhythm.
 - Motion review: scrub playback and inspect key beat frames: frame `0`, early
   reveal, midpoint, settle or near-final, `op - 1`, loop seam if looping, and
   semantic beats where a number resolves, word lands, logo lockup forms, chart

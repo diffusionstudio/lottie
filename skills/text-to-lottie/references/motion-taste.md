@@ -8,11 +8,15 @@ Use this reference when choosing pacing, easings, staging, or animation style.
 - Timing Defaults
 - Easing Intent
 - Choreography
+- Reveal Grammar
 - Motion Economy
 - Typography Choreography
+- Data And Figure Motion
 - Camera, Parallax, And Scene Motion
 - Path Reveals And Loops
+- Loop And Generative Motion
 - Style Presets
+- Render-Aware Motion
 - Checks
 
 ## Principles
@@ -42,6 +46,10 @@ Use this reference when choosing pacing, easings, staging, or animation style.
 - Ease-in-out: balanced movement between two visible states.
 - Back/overshoot: use sparingly for confirmation, playful icons, and brand
   accents; keep overshoot small for premium work.
+- No-bounce ease-out: use for serious product, enterprise, data, finance, and
+  institutional scenes.
+- Squash/overshoot: use only when playful, social, brand, or character tone is
+  appropriate.
 - Anticipate: pull slightly opposite the main action before a fast reveal.
 - Steps/holds: good for typewriter, counters, scans, and technical beats.
 - Continuous linear: use for rotations, scanners, progress loops, and mechanical
@@ -57,6 +65,19 @@ Use this reference when choosing pacing, easings, staging, or animation style.
 - Do not animate every property on every layer. Stillness gives motion contrast.
 - Scrub around the settle. The final 10-20 percent of motion should feel
   intentional, not like a numerical drift.
+
+## Reveal Grammar
+
+- Use build, settle, hold as the default reveal spine. The hold is where the
+  message or brand registers.
+- Reveal in reading or importance order. Hero/focal subject lands first;
+  labels, stats, metadata, and support arrive after.
+- Stagger repeated items by about 3-6 frames for compact motion or 50-80 ms for
+  scene-level beats.
+- Prefer mask-wipes, marker sweeps, trim-path draw-ons, and purposeful cuts over
+  uniform opacity fades for premium scenes.
+- One scene or beat should have one main flourish. Too many reveals in the same
+  beat weakens hierarchy.
 
 ## Motion Economy
 
@@ -81,6 +102,20 @@ Use this reference when choosing pacing, easings, staging, or animation style.
 - Preserve reading order. Expressive motion should make the phrase clearer, not
   harder to parse.
 
+## Data And Figure Motion
+
+- Animate data by its own logic: bars grow from baseline, lines draw left to
+  right, segments widen to proportion, dots populate, rings nest or emanate,
+  and Sankey-like flows route from source to target.
+- Count figures up with baked keyframes, tabular numerals, and an ease-out
+  settle. Let labels or units arrive after the number resolves.
+- Sync labels to geometry. A point label should resolve as the line reaches it;
+  a bar value should count while the bar grows.
+- Use mask-wipes for insight headlines and trim paths for hairlines, axes,
+  connectors, rules, and chart strokes.
+- Serious data needs calm ease-out and no bounce. Small pops are acceptable only
+  for badges, consumer/wellness warmth, or bold social panels.
+
 ## Camera, Parallax, And Scene Motion
 
 - Treat camera motion as the viewer's attention, not decoration.
@@ -99,6 +134,20 @@ Use this reference when choosing pacing, easings, staging, or animation style.
 - For loops, match first and last frames in position, opacity, color, and
   perceived velocity.
 
+## Loop And Generative Motion
+
+- Repeated fields need phase offsets by index, distance, row, or path position.
+  Lockstep pulsing reads mechanical unless the prompt asks for it.
+- Engineer loop seams with identical first/last frames, integer wave cycles,
+  closed rotations, wrapped drift, or recycled emanation rings.
+- Give ambient loops one conceptual beat: pulse, mirror, morph, inversion,
+  density build, or recovery to order.
+- Use one repeated primitive and one main animated property where possible.
+- Rich motion is licensed when the animated abstract element carries the
+  message. Keep surrounding type, UI, and support calmer.
+- Morph the same objects between states instead of spawning unrelated new
+  objects when continuity is important.
+
 ## Style Presets
 
 - `premium-settle`: slower reveal, low overshoot, elegant final ease.
@@ -107,6 +156,21 @@ Use this reference when choosing pacing, easings, staging, or animation style.
 - `technical-trace`: trim paths, precise timing, minimal flourish.
 - `ambient-loop`: no visible seam, constant perceived energy.
 - `playful-pop`: larger scale contrast, friendly overshoot, quick recovery.
+- `data-confirm`: insight headline, geometry reveal, synced count-up, calm hold.
+- `phase-field`: repeated primitive with baked offsets and seamless loop.
+
+## Render-Aware Motion
+
+- Bake counters, particle offsets, orbit math, physics, and expression-like
+  systems to keyframes before relying on Skottie.
+- Fake velocity with offset duplicate layers instead of motion blur.
+- Treat blur, bloom, glass, chrome, dither, true 3D, and displacement as
+  renderer-risky. Approximate with vector shapes, stacked tonal fills, or baked
+  raster assets.
+- Path morphs require compatible vertex structures. If not safe, use masks,
+  replacements, or crossfades.
+- Cap dense fields and verify performance. Repeater-based fields cannot assume
+  independent per-instance animation.
 
 ## Checks
 

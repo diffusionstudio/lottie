@@ -13,6 +13,8 @@ marks, and SVG logo sources.
 - Preserve brand shape, color, spacing, and final lockup unless asked to
   redesign.
 - Default to transparent background.
+- Build toward a clean lockup, settle, then hold. The held lockup is where the
+  brand registers.
 - Ask for brand constraints only when the source does not imply them or when the
   user asks for a specific style.
 - Read `svg-compatibility.md` when the logo source is SVG.
@@ -25,6 +27,8 @@ marks, and SVG logo sources.
 - `accent-sweep`: brand accent passes across the mark, then disappears.
 - `wordmark-cascade`: letters or word groups reveal in restrained stagger.
 - `splash-pop`: compact app/splash reveal with a short hold.
+- `shape-vocabulary-build`: brand shapes assemble first; wordmark lands as the
+  payoff.
 
 ## Timing And Easing
 
@@ -44,6 +48,8 @@ marks, and SVG logo sources.
 
 - Separate mark, wordmark, and accent layers when possible.
 - Keep final pose exactly aligned to the source logo.
+- If the logo has distinctive modules, strokes, or brand shapes, animate those
+  before revealing the wordmark. Do not show the full answer too early.
 - Avoid distorting brand geometry through squash, bounce, rotation, or blur-like
   effects unless the user requests that personality.
 - If a background is requested, expose `bgColor` and keep logo colors editable
@@ -54,11 +60,13 @@ marks, and SVG logo sources.
 - Final frame does not match the source lockup.
 - Wordmark letter spacing drifts during or after motion.
 - Decorative effects overpower brand recognition.
+- Wordmark appears before the build earns it.
 - Transparent output accidentally includes background pixels.
 
 ## Acceptance Checks
 
 - Final frame is a faithful logo lockup.
+- Lockup holds long enough to read after the reveal.
 - Transparent output contains no unintended background pixels.
 - Motion feels brand-appropriate, not generic.
 - SVG intersections, holes, masks, and strokes render correctly in Skottie.

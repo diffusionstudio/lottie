@@ -15,6 +15,9 @@ compact product UI motion.
 - Short, responsive motion.
 - Preserve the user's UI style if source context exists.
 - Use subtle distances and clear state changes.
+- Make the state change the climax. Everything before it is setup; everything
+  after it is confirmation.
+- Believability comes from coherent state, not dense UI detail.
 - Transparent background unless demonstrating a full component card.
 
 ## Presets
@@ -43,6 +46,8 @@ compact product UI motion.
 
 - Keep state transitions reversible when practical.
 - Use consistent timing across related states.
+- When one value drives multiple properties, keep them synchronized: handle
+  position, fill amount, color, label, and dash style should agree.
 - Expose slots for accent color, label text, and progress value when useful.
 - Avoid large brand-intro motion in functional UI contexts.
 
@@ -51,11 +56,13 @@ compact product UI motion.
 - Animation feels slow after a user action.
 - Motion is too large for the component's size.
 - State change is unclear without reading surrounding UI.
+- Active state, label, and geometry disagree.
 - Final state does not align to the component geometry.
 
 ## Acceptance Checks
 
 - Motion communicates the state change immediately.
+- UI state is coherent and readable without extra surrounding context.
 - No element jumps, clips, or overshoots awkwardly.
 - The animation still reads when viewed small.
 - Timing feels responsive at 60 fps.

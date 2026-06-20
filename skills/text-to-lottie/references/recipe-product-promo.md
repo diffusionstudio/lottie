@@ -14,6 +14,7 @@ release notes visuals, social promos, and short marketing-style Lottie scenes.
 - Treat the product/feature as the hero.
 - Use full-frame composition unless the user asks for a transparent asset.
 - Keep copy short and readable; animate one message clearly.
+- Pair one claim with one product-proof object. Avoid screenshot collages.
 - Avoid generic launch-card layouts when no product signal is visible.
 - Follow the object budget in `design-taste.md`: hero first, support detail
   second, accent system last.
@@ -26,6 +27,8 @@ release notes visuals, social promos, and short marketing-style Lottie scenes.
   message.
 - Define the product signal: UI fragment, thumbnail, feature callout, data chip,
   branded shape, or recognizable workflow step.
+- Define the proof: screenshot detail, believable UI state, metric, workflow
+  step, customer result, or capability demo.
 - Define the final poster frame: headline position, product scale, CTA/message
   focus, and supporting detail.
 - Define believability through coherent product state, workflow, copy, and
@@ -40,6 +43,7 @@ release notes visuals, social promos, and short marketing-style Lottie scenes.
 - `launch-burst`: title/product reveal with restrained celebratory accents.
 - `social-loop`: short looping promo with clear first/final frame.
 - `update-stack`: multiple feature chips/cards stagger into place.
+- `proof-object`: claim enters, one product proof animates, support copy follows.
 
 ## Timing And Easing
 
@@ -60,6 +64,10 @@ release notes visuals, social promos, and short marketing-style Lottie scenes.
 - Build around a hero layer, copy group, accent layer, and optional background.
 - Use camera scene motion as secondary when the prompt asks for pan/zoom/tour.
 - Use visual effects as secondary for glow, glass, sweep, or burst treatments.
+- Use one contained gradient or idle loop at most unless the prompt is
+  effect-led.
+- Demonstrate the claim with a believable artifact; do not only assert "fast",
+  "easy", or "trusted".
 - Avoid stuffing too many feature points into one short scene.
 - Replace empty cards with screenshot detail, mini UI rows, product thumbnails,
   feature labels, metric chips, or branded placeholders with clear meaning.
@@ -71,6 +79,7 @@ release notes visuals, social promos, and short marketing-style Lottie scenes.
 ## Common Failure Modes
 
 - Looks like a generic ad rather than the user's product.
+- Claim is not backed by a visible product proof.
 - Too much copy appears too fast.
 - Effects compete with the product.
 - Final frame lacks a clear offer or feature focus.
@@ -81,6 +90,7 @@ release notes visuals, social promos, and short marketing-style Lottie scenes.
 ## Acceptance Checks
 
 - Product/feature is unmistakably the hero.
+- Claim, product proof, and final message agree.
 - The scene includes product-specific visual information, not only generic
   containers.
 - Product/content detail is coherent and readable without becoming crowded.

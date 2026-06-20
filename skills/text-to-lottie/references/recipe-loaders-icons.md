@@ -15,6 +15,10 @@ states, warning alerts, empty states, and compact status animations.
 - Loop cleanly for loaders/spinners/progress.
 - Play once and settle for success/error/warning states unless looping is asked.
 - Keep geometry crisp and readable at small sizes.
+- Prefer one primitive or icon idea repeated with phase offsets over unrelated
+  moving parts.
+- Add only one charm gesture, such as blink, bounce, pulse, or draw-on, when it
+  fits the brand tone.
 
 ## Presets
 
@@ -25,6 +29,8 @@ states, warning alerts, empty states, and compact status animations.
 - `error-shake`: brief x/alert emphasis, controlled and not frantic.
 - `warning-pulse`: triangle/badge reveal with restrained attention pulse.
 - `scan-progress`: linear or radial progress sweep with controlled repetition.
+- `phase-dots`: repeated dots or marks animate with offset timing and a matched
+  loop seam.
 
 ## Timing And Easing
 
@@ -43,12 +49,14 @@ states, warning alerts, empty states, and compact status animations.
 
 - Use trim paths for strokes, checks, rings, and circular loaders.
 - Match first and last frames for loops.
+- Engineer loop seams with identical first/last state or a period-locked cycle.
 - Avoid excessive detail below small-icon sizes.
 - Expose slots for accent color, stroke width, and background only if full-frame.
 
 ## Common Failure Modes
 
 - Loop seam is visible.
+- Repeated parts move in lockstep and feel mechanical.
 - Icon becomes unrecognizable during motion.
 - State animation feels too playful for an error/warning.
 - Stroke caps or joins render differently than expected.
@@ -56,6 +64,7 @@ states, warning alerts, empty states, and compact status animations.
 ## Acceptance Checks
 
 - Loop seam is invisible when looping.
+- Repeated motion uses phase offset unless lockstep is intentional.
 - Icon remains recognizable during motion.
 - Timing feels useful, not frantic.
 - Transparent output has no unwanted background layer.

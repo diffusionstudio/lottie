@@ -27,6 +27,9 @@ explainer graphics, process steps, and data/connection reveals.
   positions, and strongest still-frame read.
 - Choose a visual system: editorial light, product UI, schematic minimal,
   branded system map, dense dashboard detail, or presentation-grade explainer.
+- Choose the structural relationship: chain for sequence, bracket for
+  part-whole, orbit for convergence, radial for system, grid for comparison,
+  or hairline rows for evidence.
 - Decide the node/detail strategy. Each node should communicate role, state,
   sequence, metric, UI fragment, icon, or label.
 - Decide what the lines mean: data flow, dependency, sequence, ownership, or
@@ -41,6 +44,8 @@ explainer graphics, process steps, and data/connection reveals.
 - `scan-highlight`: highlight travels across a path or system segment.
 - `node-network`: nodes appear in clusters, connections follow.
 - `step-build`: diagram builds one logical step at a time.
+- `orbit-system`: radial nodes draw in, orbit subtly, and counter-rotate labels
+  to keep them upright.
 
 ## Timing And Easing
 
@@ -68,6 +73,9 @@ explainer graphics, process steps, and data/connection reveals.
   style to show primary and secondary flow.
 - Use grids as alignment structure or axes, not decorative wallpaper.
 - Turn floating circles into ports, status indicators, badges, or remove them.
+- Use tonal rings, hairlines, halftone-like dots, or subtle value steps for
+  depth before glow or shadows.
+- For orbit/radial systems, counter-rotate text/icons if the parent rotates.
 - If the final frame feels crowded, reduce nodes, merge labels, or emphasize the
   primary path before adding more detail.
 
@@ -79,6 +87,7 @@ explainer graphics, process steps, and data/connection reveals.
 - Decorative effects reduce technical clarity.
 - Empty rounded rectangles make the diagram feel placeholder-like.
 - Dark grid plus blue arrow chains make the scene feel generic unless requested.
+- Generic node mesh suggests "technical" without explaining a relationship.
 - Large blank regions weaken the final poster frame.
 - Fake complexity adds visual noise without explaining the system.
 - Dense meaningful-looking detail makes the system harder to understand.
@@ -91,5 +100,7 @@ explainer graphics, process steps, and data/connection reveals.
 - Nodes contain enough information to be meaningful without the animation.
 - The final topology feels balanced, with intentional negative space.
 - Decoration has a job: grouping, state, brand, attention, or structure.
+- Diagram structure communicates the relationship without relying on labels
+  alone.
 - Detail improves comprehension without crowding the final composition.
 - SVG source diagrams preserve holes, clipping, and intersections.

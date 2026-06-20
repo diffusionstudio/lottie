@@ -18,7 +18,11 @@ specific scene. Starters are briefs and defaults, not prebuilt JSON templates.
 - `svg-illustration-reveal`: SVG-derived vector reveal with compatibility pass.
 - `product-launch-card`: feature/product announcement with title, media, accent.
 - `diagram-explainer`: technical line trace with labels and callouts.
+- `data-stat-card`: KPI/stat/chart scene with count-up and direct labels.
+- `brand-card-system`: reusable layout skeleton, type system, and accent rule.
 - `parallax-scene`: layered pan/zoom or camera-follow composition.
+- `ambient-field`: two-tone background from one anchor plus one derived field.
+- `generative-loader`: one repeated primitive with phase offsets and clean loop.
 - `effects-led-promo`: title/product scene with glow, glass, sweep, or burst.
 
 ## Briefing Defaults
@@ -45,3 +49,5 @@ If the user does not provide details, choose sensible defaults:
 - The starter produces a concrete scene direction, not a generic list of ideas.
 - The selected primary recipe is clear before JSON authoring starts.
 - The background policy and output size match the intended use.
+- Any starter with stats, charts, loops, particles, or fields has a Skottie-safe
+  construction plan before authoring.

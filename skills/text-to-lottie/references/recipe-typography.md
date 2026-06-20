@@ -17,6 +17,9 @@ handwritten/path reveals, text morphs, counters, and short message-led scenes.
 - Prefer readable hierarchy over novelty.
 - Establish type hierarchy, line composition, and final-frame balance before
   adding accents or effects.
+- Choose the type voice deliberately: serif for human/editorial authority,
+  grotesque for product/function, monospace for technical labels, expressive
+  display type when the word itself is the subject.
 - Convert text to paths when exact font rendering matters or font availability
   is uncertain.
 
@@ -63,6 +66,9 @@ handwritten/path reveals, text morphs, counters, and short message-led scenes.
 - `quote-lift`: quote enters by line, attribution follows after a readable beat.
 - `kinetic-word-choreography`: one active word drives layout, scale, or rhythm.
 - `kinetic-snap`: semantic active word hits sharply, support text stays calmer.
+- `statement-mask`: line-by-line mask reveal with strong still-frame hierarchy.
+- `word-per-beat`: one word or phrase owns each beat, then resolves to a held
+  lockup.
 - `typewriter-clean`: stepped character/word reveal with a soft cursor/accent.
 - `handwritten-trace`: path reveal following writing direction, subtle ink hold.
 - `text-morph-lite`: crossfade/mask/position replacement unless paths are safe.
@@ -94,6 +100,8 @@ handwritten/path reveals, text morphs, counters, and short message-led scenes.
   than compete.
 - Use masks or shape reveals for premium title work; use opacity/position
   stagger for simpler captions.
+- Use per-line mask reveals and meaning-based line breaks for statement/title
+  work. Avoid random per-letter motion unless the prompt asks for it.
 - For kinetic typography, define anchor, support, and active text roles before
   keyframing.
 - Avoid applying the same opacity/position/scale entrance to every word. Offset
@@ -118,6 +126,7 @@ handwritten/path reveals, text morphs, counters, and short message-led scenes.
 - Decorative accents fill space but do not guide reading or meaning.
 - Type accents or effects arrive before the hierarchy and line breaks are
   resolved.
+- Typeface choice does not match the message tone.
 
 ## Acceptance Checks
 
@@ -131,4 +140,5 @@ handwritten/path reveals, text morphs, counters, and short message-led scenes.
 - Accents support reading rhythm, reveal, emphasis, or semantic motion.
 - Type hierarchy, line breaks, and optical placement pass before effects are
   considered polish.
+- If type is the subject, each major beat is readable as a strong still frame.
 - No text touches unsafe edges or clips during motion.

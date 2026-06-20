@@ -6,12 +6,17 @@ matters.
 ## Contents
 
 - Design Decision Loop
+- Taste Modes
 - Simplify Before Adding
 - Composition Defaults
+- Primitive Systems
 - Anti-Generic Replacements
 - Placement And Framing
 - Typography
 - Color And Material
+- Data And Figures
+- Brand-System Grammar
+- Background And Generative Fields
 - Production Polish
 
 ## Design Decision Loop
@@ -23,6 +28,8 @@ not clear, the design will usually drift toward generic shapes.
 - Translate "clean", "technical", or "premium" into a specific system: editorial
   light, product UI, schematic minimal, branded system map, dense dashboard
   detail, or presentation-grade explainer.
+- Choose the taste mode before authoring: restrained product, institutional
+  data, bold social, expressive primitive, playful character, or ambient field.
 - Start with the fewest objects needed. A strong default is one focal subject,
   one support layer, and one accent system.
 - Choose the main still image first. Motion should reveal and clarify that
@@ -35,6 +42,21 @@ not clear, the design will usually drift toward generic shapes.
 - If hierarchy, spacing, color restraint, object necessity, or final-frame
   quality fails, simplify and revise before finishing.
 
+## Taste Modes
+
+- Restraint-premium: neutral or one-hue palette, generous space, one functional
+  accent, calm easing. Use for product, enterprise, technical, finance, and
+  serious data.
+- Commitment-premium: one word, number, mark, or object at full focus; two-tone
+  or brand-locked color; beat-driven energy. Use for brand, social, title, and
+  launch moments that need impact.
+- Expressive primitive: one repeated shape, stroke, dot, glyph, cursor, or mark
+  carries the idea. Use arrangement and gestalt before literal illustration.
+- Ambient/generative: one anchor, one derived field, one ground. Keep the field
+  quiet enough to host foreground content.
+- Playful/character: use one emotional signature, such as blink, look, bounce,
+  or squash. Keep the rest disciplined so charm does not become clutter.
+
 ## Simplify Before Adding
 
 - Prefer fewer stronger objects over many meaningful-looking details.
@@ -46,6 +68,19 @@ not clear, the design will usually drift toward generic shapes.
   evenly weighted, or hard to read.
 - When the scene feels generic, first strengthen the focal subject, spacing,
   typography, and color roles. Add effects only after the composition holds.
+
+## Primitive Systems
+
+- Build richness from one primitive repeated or varied by scale, density,
+  position, value, or timing.
+- A single stroke, dot, ring, capsule, glyph, or geometric mark can become logo,
+  texture, diagram, loader, or accent when used consistently.
+- Density is acceptable when it is one motif multiplied. Many unrelated motifs
+  read as clutter.
+- If using an expressive primitive, make the arrangement carry meaning:
+  overlap, orbit, chain, bracket, grid, radial order, or figure/ground.
+- Avoid literal clip-art when an abstract relationship can explain the message
+  more clearly.
 
 ## Composition Defaults
 
@@ -92,6 +127,11 @@ not clear, the design will usually drift toward generic shapes.
 - Use one main type idea per composition: editorial, utilitarian, kinetic,
   playful, or premium.
 - Decide the focal line or phrase before styling support text.
+- Choose type for voice: serif for human/editorial authority, grotesque for
+  product/function, monospace for technical labels, expressive type only when
+  the words are the subject.
+- Large light-weight type can feel more premium than heavy bold in restrained
+  institutional scenes; heavy bold suits loud social and title work.
 - Keep text readable at the intended size. Avoid crowding edges.
 - Split long text into deliberate lines; do not let line breaks feel accidental.
 - Establish type hierarchy with size, weight, case, and spacing before adding
@@ -109,14 +149,58 @@ not clear, the design will usually drift toward generic shapes.
 - Start from source/brand colors when provided.
 - Use one dominant neutral or background, one primary color, and one accent
   unless the concept demands more.
+- Prefer warm near-black and cream/off-white over pure black/white when no
+  brand system is provided and the scene should feel premium.
 - Assign color roles before adding new colors: background/neutral, focal
   subject, accent, and optional semantic state.
+- Quarantine saturation to one expressive element, or make every color teach a
+  category, state, comparison, or brand role.
 - Do not let multiple accents compete for the same level of attention.
+- Use tonal steps, hairlines, and brightness ramps for depth before shadows,
+  glow, glass, or blur.
 - Avoid muddy gradients, arbitrary glows, and decorative effects that reduce
   legibility.
 - When using glass/metal/glow effects, keep the base composition readable with
   the effect removed.
 - Verify color contrast on the intended background or transparent preview.
+
+## Data And Figures
+
+- The headline should state the insight; the chart or number confirms it.
+- Pick the layout by the data job: hero figure, KPI grid, stat-card triad,
+  comparison chart, progress card, dashboard metric, social proof, or heat map.
+- Big figures should lead with extreme figure-to-label scale contrast.
+- Direct-label values. Avoid forcing viewers to decode axes, legends, or chart
+  clutter.
+- Use one semantic accent against neutral, two values of one hue, or one
+  saturated hue per card. Do not use rainbow color decoratively.
+- Encode magnitude spatially when useful: size, bar height, strip width, ring
+  nesting, heat rank, or actual-vs-goal contrast.
+- Credibility comes from concrete scope signals: counts, source totals,
+  outcome-tied logos, named people, or transparent caveats.
+
+## Brand-System Grammar
+
+- For multi-scene work, lock one layout skeleton, type system, and accent rule
+  before designing variants.
+- Use polarity flips, saturated-card variants, or theme slots for rhythm without
+  inventing a new design language per scene.
+- Apply the same restraint to utility content: timelines, address cards,
+  event rows, and labels should use the same grid, hairlines, and type system.
+- A recurring signature device can make a system ownable, but it must stay
+  tonal or semantic instead of competing with the focal subject.
+
+## Background And Generative Fields
+
+- Build ambient fields from one anchor plus one derived field on one ground.
+- Prefer fields generated from the subject, such as ripples, contours, or
+  orbiting points, over generic motif scatter.
+- Keep background fields type-free, low-contrast, and still-frame-clean unless
+  the field itself is the deliverable.
+- Use one motion archetype that fits the content: color cycle, path morph,
+  drift and twinkle, staggered draw-on, radial emanation, or phase-offset wave.
+- Make loops seamless and quiet enough that foreground content remains the
+  hierarchy.
 
 ## Production Polish
 

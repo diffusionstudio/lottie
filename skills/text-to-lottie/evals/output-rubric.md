@@ -45,6 +45,9 @@ normal animation work.
   and decoration purpose.
 - Designed scenes use an object budget: one focal subject, one support layer,
   and one accent system unless the concept clearly needs more.
+- The agent chooses an appropriate taste mode instead of treating "premium" as
+  one style: restrained product, institutional data, bold social, expressive
+  primitive, playful character, or ambient field.
 - Motion uses purposeful easing, readable staging, and clear choreography.
 - Motion reinforces the same hierarchy as the final frame.
 - UI and state feedback feel responsive rather than slow or theatrical.
@@ -73,8 +76,54 @@ normal animation work.
   glow, glass, gradient, or noise.
 - Fail product/content scenes where believability comes from density rather
   than coherent state, workflow, copy, and hierarchy.
+- Fail decorative color that does not teach category, state, comparison, brand,
+  or hierarchy.
+- Fail scenes where hierarchy depends on cards, shadows, glow, or chrome before
+  scale, weight, brightness, spacing, and timing have been resolved.
 - If design QA fails, the agent should simplify and revise before calling the
   task complete.
+
+## Data And Chart Quality
+
+- Data/stat scenes choose a clear archetype: hero figure, KPI grid, stat-card
+  triad, comparison chart, progress card, dashboard metric, social proof, or
+  heat map.
+- Headline states the insight, not only the topic.
+- Values are direct-labeled; viewers should not need axis or legend decoding in
+  a short Lottie.
+- Figures count up with baked keyframes, tabular numerals, and labels/units
+  arriving after the number resolves.
+- Chart geometry reveals by chart logic: bars grow, lines draw, segments widen,
+  dots populate, rings nest or emanate, and labels sync to geometry.
+- Serious data uses calm ease-out and no bounce.
+- Chartjunk, decorative 3D, rainbow series, and incoherent dashboard density are
+  blockers unless the prompt explicitly asks for them.
+
+## Motion And Loop Quality
+
+- Repeated elements use reading-order stagger or phase offsets unless lockstep
+  is intentional.
+- Reveals follow build, settle, hold, with support arriving after the hero.
+- Loops have engineered seams: matched endpoints, integer cycles, wrapped drift,
+  closed rotation, or recycled emanation.
+- Ambient/generative motion has one conceptual beat and remains subordinate
+  unless the field itself is the deliverable.
+- Motion reveals value and meaning; it does not animate chrome to compensate for
+  weak composition.
+
+## Render And Construction Risk
+
+- No live expressions are assumed in Skottie; counters, particles, orbits,
+  physics, noise, and expression-like systems are baked.
+- Path morphs use compatible vertex structures or a safer mask/replacement
+  strategy.
+- Blur, bloom, glass, chrome, dither, true 3D, displacement, and frame-by-frame
+  smears are approximated with vector-safe layers, simplified, or baked as
+  assets.
+- Dense fields are capped or rasterized when needed for performance.
+- Brand-specific marks, protected palettes, UI chrome, logos, headshots, and
+  compliance badges are supplied, placeholdered, or omitted; they are not
+  restyled or copied from references.
 
 ## Anti-Generic Quality
 
@@ -90,6 +139,8 @@ normal animation work.
 - Prefer content-rich nodes, balanced topology, strong type hierarchy, optical
   alignment, and intentional negative space.
 - Prefer fewer stronger objects over many meaningful-looking details.
+- Prefer color quarantine, semantic accents, warm neutrals, hairlines, tonal
+  depth, and whitespace before adding decorative effects.
 
 ## Prompt Robustness Cases
 
@@ -106,3 +157,7 @@ normal animation work.
   detail."
 - "Create a polished title scene with strong hierarchy and restrained color."
 - "Animate a product UI flow that feels believable, not crowded."
+- "Animate these three KPIs into a premium stat card."
+- "Create a pitch-slide chart showing revenue growing 11% month over month."
+- "Make a generative loader from one repeated dot primitive."
+- "Create a clean ambient background behind a headline, no generic particles."

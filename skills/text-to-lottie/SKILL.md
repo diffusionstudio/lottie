@@ -1,6 +1,6 @@
 ---
 name: text-to-lottie
-description: Create, edit, or fix Lottie/Bodymovin JSON animations for the local Skia Skottie player. Use for text-to-Lottie, SVG/logo/type animation, loaders/icons, state feedback, UI microinteractions, lower thirds, diagrams, product promos, scene/camera motion, visual effects, scene edits, slots/controls, and Skottie debugging.
+description: Create, edit, or fix Lottie/Bodymovin JSON animations for the local Skia Skottie player. Use for text-to-Lottie, SVG/logo/type animation, loaders/icons, state feedback, UI microinteractions, lower thirds, diagrams, data/stat/chart animations, product promos, scene/camera motion, visual effects, scene edits, slots/controls, and Skottie debugging.
 ---
 
 # Text To Lottie
@@ -42,6 +42,7 @@ inline rules in this file.
 | Generic "animate this SVG" or SVG-to-Lottie | `references/recipe-svg-animation.md`, `references/svg-compatibility.md`, `references/motion-taste.md` |
 | Camera follow, pan, zoom, parallax, scene motion | `references/recipe-camera-scene-motion.md`, `references/design-taste.md`, `references/motion-taste.md` |
 | Diagram, technical line animation, callout, flow trace | `references/recipe-diagram-technical.md`, `references/design-taste.md`, `references/motion-taste.md` |
+| Data, stats, KPIs, charts, metrics, dashboard figures | `references/recipe-data-stats.md`, `references/design-taste.md`, `references/motion-taste.md` |
 | Product launch, feature announcement, social promo | `references/recipe-product-promo.md`, `references/design-taste.md`, `references/motion-taste.md` |
 | Glow, glass, metal, gradient, fill, bubble/burst effects | `references/recipe-visual-effects.md`, `references/design-taste.md`, `references/motion-taste.md` |
 | SVG input inside logo/icon/UI/lower-third work | The task recipe plus `references/svg-compatibility.md` |

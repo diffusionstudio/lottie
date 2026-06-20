@@ -15,6 +15,16 @@
     "reason": "Product promo Lottie scene."
   },
   {
+    "query": "Animate these KPIs into a clean count-up stat card.",
+    "should_trigger": true,
+    "reason": "Data/stat Lottie animation request."
+  },
+  {
+    "query": "Create a pitch chart animation with direct labels and a final insight.",
+    "should_trigger": true,
+    "reason": "Chart/stat Lottie animation request."
+  },
+  {
     "query": "Make this SVG diagram trace the flow step by step.",
     "should_trigger": true,
     "reason": "Technical SVG diagram animation."
@@ -58,6 +68,11 @@
     "query": "Can you critique this logo and suggest brand strategy?",
     "should_trigger": false,
     "reason": "Design critique only, no Lottie deliverable."
+  },
+  {
+    "query": "Can you analyze this spreadsheet and tell me which KPI changed most?",
+    "should_trigger": false,
+    "reason": "Data analysis only, no Lottie deliverable."
   },
   {
     "query": "Explain how After Effects expressions work.",

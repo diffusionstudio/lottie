@@ -21,6 +21,8 @@ is the main deliverable.
   material behavior.
 - Effects cannot compensate for weak hierarchy, spacing, or final-frame
   composition. Revise the base design first.
+- Treat blur, glow, glass, chrome, dither, true 3D, and displacement as
+  render-risky. Approximate with vector shapes or bake as assets.
 - Prefer simple Lottie shapes, gradients, masks, and opacity layers over
   renderer-specific filters.
 - Preserve transparent output when used with logos, icons, overlays, or SVG
@@ -34,6 +36,10 @@ is the main deliverable.
 - `gradient-fill`: color/fill transition moving across a shape or word.
 - `bubble-burst`: playful circles expand/fade around a success or reveal.
 - `spark-accent`: tiny highlights appear around a final settle.
+- `ambient-field`: one anchor generates a quiet two-tone field or loop behind
+  the main content.
+- `phase-primitive`: one repeated primitive animates with offset timing and a
+  seamless loop.
 
 ## Purpose Pairings
 
@@ -49,6 +55,7 @@ is the main deliverable.
   final frame, not more glow.
 - Treat "technical" as precision, structure, and information clarity, not neon
   decoration.
+- Prefer a field generated from the hero subject over generic particle scatter.
 
 ## Timing And Easing
 
@@ -69,6 +76,9 @@ is the main deliverable.
 
 - Keep effect layers separate and named.
 - Clip/sweep effects with masks only when necessary and verify all frames.
+- For ambient/generative effects, use one anchor, one field, one ground, and one
+  motion archetype.
+- Bake particle, orbit, noise, and expression-like systems to keyframes.
 - Use additive-looking color choices cautiously; Skottie/browser output can vary.
 - Limit effects on text until legibility is confirmed.
 - For typography, use accents or effects only when they support reading rhythm,
@@ -82,6 +92,8 @@ is the main deliverable.
 - Playful bursts feel random because they are not tied to an action beat.
 - Decorative effects hide weak composition instead of improving it.
 - Premium treatment becomes a pile of glow, glass, and gradients.
+- Render-only effects are promised as native vector Lottie behavior.
+- Ambient field becomes generic wallpaper unrelated to the subject.
 - Typography effects become filler instead of supporting the phrase.
 - Effect layers make the object budget feel crowded.
 
@@ -90,6 +102,7 @@ is the main deliverable.
 - Effect supports the primary recipe's message.
 - Effect purpose is identifiable even in the final frame.
 - Base composition remains strong if the effect is removed.
+- Ambient/generative effects are semantically anchored and loop cleanly.
 - Typography effects help the viewer read or feel the phrase.
 - Final frame is clean after the effect passes.
 - No effect layer creates unintended background pixels.

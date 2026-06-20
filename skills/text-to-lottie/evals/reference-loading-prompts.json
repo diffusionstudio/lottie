@@ -102,5 +102,39 @@
       "references/recipe-logo.md",
       "references/recipe-product-promo.md"
     ]
+  },
+  {
+    "query": "Animate a KPI grid with count-up numbers and direct labels.",
+    "must_read": [
+      "references/player-contract.md",
+      "references/recipe-data-stats.md",
+      "references/design-taste.md",
+      "references/motion-taste.md"
+    ],
+    "may_read": [
+      "references/lottie-spec-map.md"
+    ],
+    "must_not_read": [
+      "references/recipe-typography.md",
+      "references/recipe-diagram-technical.md",
+      "references/recipe-product-promo.md"
+    ]
+  },
+  {
+    "query": "Make a product announcement with a screenshot, proof metric, and one CTA.",
+    "must_read": [
+      "references/player-contract.md",
+      "references/recipe-product-promo.md",
+      "references/recipe-data-stats.md",
+      "references/design-taste.md",
+      "references/motion-taste.md"
+    ],
+    "may_read": [
+      "references/lottie-spec-map.md"
+    ],
+    "must_not_read": [
+      "references/recipe-svg-animation.md",
+      "references/recipe-diagram-technical.md"
+    ]
   }
 ]

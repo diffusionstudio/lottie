@@ -60,8 +60,10 @@ kinetic title with glass sweep uses typography plus visual effects.
 
 1. Route the task using the table above. Read only the relevant references that
    exist.
-2. Locate the official player project and target scene. If editing, re-read the
-   current `lottie.json` from disk because the UI can write slot edits back to
+2. Locate the official player project and resolve the target scene using the
+   target precedence below. Before editing, verify the resolved path is
+   `public/projects/<project>/<scene-N>/lottie.json`; re-read that current file
+   immediately before overwriting because the UI can write slot edits back to
    source.
 3. Decide the background policy before authoring.
 4. Write or update `public/projects/<project>/<scene-N>/lottie.json` and, when
@@ -96,9 +98,14 @@ These few defaults are non-negotiable and apply to every designed scene. Load
 ### Scene Rules
 
 - Scene files live at `public/projects/<project>/<scene-N>/lottie.json`.
-- Use a target named by the user, the active scene from `GET /__context`, or a
-  new safe scene. Overwrite `main-project/scene-1` only if it is still the
-  untouched placeholder; otherwise create a new scene.
+- Resolve target scenes by authority: an explicit file path wins; a browser URL
+  route like `/<project>/<scene>` wins next; an already-known project/scene for
+  the task wins next; otherwise create a new safe scene. Use `/__context` only
+  for discovery, verification, or playback state unless the task explicitly says
+  to edit what is currently on screen and no more specific target exists. Do not
+  let `/__context.live` override a known file path, URL, or project/scene.
+  Overwrite `main-project/scene-1` only if it is still the untouched placeholder;
+  otherwise create a new scene.
 - Full-frame standalone compositions should include a visible background layer
   with a `bgColor` slot and `controls.json` entry.
 - Transparent-by-default outputs include logos, icons, loaders, overlays, lower
@@ -120,7 +127,7 @@ These few defaults are non-negotiable and apply to every designed scene. Load
 
 Before finishing:
 
-1. Confirm the file path is
+1. Confirm the intended target file path is
    `public/projects/<project>/<scene-N>/lottie.json`.
 2. Validate JSON:
 

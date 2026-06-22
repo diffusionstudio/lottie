@@ -43,11 +43,27 @@ public/
 
 ## Target Scene Policy
 
-- Use a target scene named by the user.
-- If editing what is on screen, read the active project/scene from
-  `GET /__context`.
+- Resolve target scenes by authority. A user-provided file path wins. A browser
+  URL route like `/<project>/<scene>` wins next and maps to
+  `public/projects/<project>/<scene>/lottie.json`. An already-known
+  project/scene for the task wins next.
+- Do not let the active scene from `GET /__context`, the `live` block in
+  `/__context`, or `/__context.live` override a known file path, URL, or
+  project/scene.
+- If project/scene is known, navigate directly to
+  `http://localhost:3030/<project>/<scene>` and inspect frames there with
+  `?frame=<N>`.
+- Use the active project/scene from `GET /__context` only when the task is
+  explicitly to edit what is currently on screen and no more specific target
+  exists.
 - If creating new work without a target, create a new project/scene or the next
   available `scene-<N>`.
+- For dropped, uploaded, or imported Lottie JSON, work on the generated scene
+  under `public/projects/<imported-project>/<scene>/lottie.json`, not the
+  original dropped/uploaded JSON context.
+- Before editing, verify the resolved file is the intended
+  `public/projects/<project>/<scene>/lottie.json`; before overwriting an
+  existing `lottie.json`, re-read the current file from disk.
 - Overwrite `public/projects/main-project/scene-1/lottie.json` only when it is
   still the untouched placeholder. If unsure, create a new scene.
 
@@ -64,14 +80,17 @@ such as `Scene 1 - 512x512`.
 
 ## Context Endpoint
 
-Use the context endpoint instead of guessing:
+Use the context endpoint for project-tree discovery, last-modified checks, and
+observational playback state:
 
 ```bash
 curl -s http://localhost:3030/__context
 ```
 
 It reports the project tree, active project/scene, frame, total frames, fps, and
-last-modified times.
+last-modified times. Treat that active scene as observational unless the task is
+explicitly to edit what is currently on screen and no path, URL route, or known
+project/scene target exists.
 
 ## Frame Pinning
 

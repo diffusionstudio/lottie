@@ -16,9 +16,16 @@ npm install
 npm run dev
 ```
 
-The dev server defaults to `http://localhost:3030`. If the project already
-exists, use its existing setup and start `npm run dev` when browser verification
-is needed.
+The dev server defaults to port `3030`, but never assume it. On `npm run dev`,
+Vite prints the URL it bound to (`Local: http://localhost:<port>/`) and falls
+back to the next free port when `3030` is taken — e.g. when another project
+folder is already serving. Treat that printed port as the source of truth and
+use it as `<port>` in every curl and navigation below; a second folder's server
+answers on a different port, so a blind request to `3030` will hit the wrong
+project.
+
+If the project already exists, use its existing setup and start `npm run dev`
+when browser verification is needed.
 
 ## Scene Layout
 
@@ -51,7 +58,7 @@ public/
   `/__context`, or `/__context.live` override a known file path, URL, or
   project/scene.
 - If project/scene is known, navigate directly to
-  `http://localhost:3030/<project>/<scene>` and inspect frames there with
+  `http://localhost:<port>/<project>/<scene>` and inspect frames there with
   `?frame=<N>`.
 - Use the active project/scene from `GET /__context` only when the task is
   explicitly to edit what is currently on screen and no more specific target
@@ -84,7 +91,7 @@ Use the context endpoint for project-tree discovery, last-modified checks, and
 observational playback state:
 
 ```bash
-curl -s http://localhost:3030/__context
+curl -s http://localhost:<port>/__context
 ```
 
 It reports the project tree, active project/scene, frame, total frames, fps, and
@@ -97,7 +104,7 @@ project/scene target exists.
 Inspect exact frames by navigating to:
 
 ```text
-http://localhost:3030/<project>/<scene>?frame=<N>
+http://localhost:<port>/<project>/<scene>?frame=<N>
 ```
 
 `?frame=N` seeks and pauses on load. Use frame `0`, midpoint, and `op - 1` for

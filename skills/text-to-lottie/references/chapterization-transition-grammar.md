@@ -63,28 +63,65 @@ Fast transitions are fine, but never at the cost of the read.
 - Every seam needs a reason — preserve continuity, create contrast, reset rhythm,
   or land a point. Do not vary transition types randomly.
 
-## Jump Cut And Cut-On-Action Mechanics
+## Seam Mechanics
 
-- A hard cut reads smooth only when the eye is already moving: cut at high
-  velocity with travel direction continuous across the seam. Content and position
-  may jump if momentum does not — this is cutting on action.
-- Per beat, the motion runs snap-in → readable coast (message registers) →
-  exit-accel, with the cut placed in the exit-accel so the move's natural end
-  sits past the cut and it never settles on screen.
-- It is rhythmic, not local: it only reads as intentional across a repeated
-  armature of about three to four or more beats (anthology/supercut, often
-  looping), where rhythm and momentum carry the cuts and the cadence never
-  resolves. One isolated interrupted move just looks broken.
+A transition is chapter role + timing + direction + cut point + masking +
+easing — not easing alone; anchors only support it. Carry across seams: cut
+during motion for cut-on-action (never after a settle); match direction and
+perceived velocity across jump cuts; a readable coast/hold must precede any fast
+exit; and interrupted motion only reads as intentional under repeated rhythm (an
+armature of ~3–4+ beats), not as a one-off.
 
-## Easing-Anchor Support
+Author cut-on-motion exits so the natural endpoint lives beyond the visible cut:
+the visible chapter is a window into a longer arc (e.g. it ends at frame 100 but
+the move would resolve toward ~120–140), and the seam interrupts the move while
+velocity is still active, often rising, before the motion settles. The core rule
+is active continuation, not necessarily acceleration: velocity may be rising
+(kinetic exit), steady (a constant pan), or already high and steady (a fast
+object pass) — what matters is it is not settled and would continue if the
+chapter were extended.
 
-Anchors are tools, not the transition. A transition is chapter role + timing +
-direction + cut point + masking + easing.
+| method | why the seam works | outgoing last frame | incoming first frame | anchors | switch when |
+|---|---|---|---|---|---|
+| hard cut on action | eye is mid-move, so motion continuity hides the content jump | focal element still moving (velocity active, often rising) toward a beyond-window/offscreen endpoint; not arriving at its final authored target on the cut frame | new content already in motion, compatible direction; no static hold | out `exit-accelerate`/`travel-cut`; in `entrance-sharp` | beat must be read at rest → hold/settle cut |
+| jump cut | as hard cut, but the match across the seam sells continuity | moving toward a beyond-window endpoint (velocity active, often rising); note direction + perceived speed; not arriving at the final target on the cut frame | enters same direction at similar speed; position may reset | out `exit-accelerate`/`travel-cut`; in `travel-balanced`/`entrance-sharp` | single beat / no rhythm → looks broken; use hold/settle or carry |
+| motion-masked swap | outgoing motion (or the shape it leaves) becomes the matte that reveals the next beat — no visible cut; the content change happens entirely while the mask hides it | the moving element fully covers the swap region / mask filled | next content already composed under the mask, revealed as it clears | `entrance-sharp` for the reveal; out `travel-balanced` | nothing shared to mask with → hard cut or occlusion wipe |
+| continuous carry | one persistent element travels between chapters; identity continuity, often no cut | carried element mid-travel toward its next position | same element, or clearly related element, continues from matching position/velocity or preserved motion logic (not a fresh unrelated entrance); surroundings may change | `travel-balanced`; `settle-soft` if it lands | chapters share no element / need a clean reset → hard cut or occlusion wipe |
+| occlusion wipe | a large shape covers the frame, hiding the swap, then uncovers the new chapter | covering shape fully occludes the frame (or swap region) | new chapter already fully composed behind the cover before it exits; revealed as the shape leaves | `entrance-sharp` for cover-on + reveal; `travel-balanced` for the sweep | want energy/continuity, not a full cover → hard cut or carry |
+| hold/settle cut | the beat fully lands and is read, then changes — clarity over pace (opposite of cut-on-motion: the move completes and holds before the seam) | motion settled; message readable and at rest (a hold of N frames) | clean start of the next beat (an entrance, not mid-motion) | `settle-soft` to land; `entrance-sharp` to start next | pace/energy matters more than the settle → hard cut on action |
+| loop reset | last frame matches first (position, color, velocity) so the wrap is invisible; or a deliberate visible reset beat | state equals the first frame's state (seamless), or a deliberate exit for a visible reset | identical to the loop start; perceived velocity continuous | match in/out velocity (often `travel-balanced`/linear); `exit-accelerate`+cut for a visible reset | one-shot, not a loop → normal ending (settle) |
 
-- `travel-cut` / `exit-accelerate`: cut-on-motion exits.
-- `travel-balanced`: continuous carry.
-- `settle-soft`: chapter landings and read-critical holds.
-- `entrance-sharp`: mask-wipes and strong reveals.
+## Seam Plan (before authoring)
+
+Decide, per seam, before keyframing:
+
+- chapter role — what this beat does
+- readable window — where the message coasts/holds
+- outgoing motion — what's moving at the end (direction + speed)
+- transition type — from the grammar
+- incoming motion — what's moving at the start
+- easing anchor — the supporting curve
+- cut/hold frame — the exact seam frame; in-motion vs at-rest
+- reason for the seam — continuity / contrast / rhythm reset / land a point
+
+## Seam Verification
+
+Inspect the two boundary frames per seam:
+
+- Render the outgoing last frame and the incoming first frame; confirm each meets
+  its row's two frame conditions above.
+- Cut-on-action / jump cut: outgoing last frame is still moving (not settled);
+  direction + perceived velocity match on the incoming first frame. Check the
+  outgoing motion would continue if the chapter were extended — if the object
+  reaches its final target on the seam, it is a settle cut, not cut-on-motion.
+- Masked swap / occlusion wipe: no gap frame where neither chapter is composed;
+  the mask/cover fully occludes at the swap.
+- Continuous carry: the carried element's position + velocity match across the
+  seam, or the motion logic is visibly continuous enough that the eye can follow
+  it (related element / transform is fine).
+- Hold/settle cut: the message is readable and at rest before the cut.
+- Loop reset: first and last frames match (position, color, velocity) unless the
+  reset is intentional.
 
 ## Guardrails
 

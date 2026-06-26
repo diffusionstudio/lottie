@@ -14,17 +14,18 @@ the cleanest representation.
 1. Purpose
 2. When To Use
 3. Core Invariants
-4. Operation Taxonomy
-5. Method Selection Ladder
-6. Contour Pairing And Rail Midpointing
-7. Medial Axis, Straight Skeleton, And Raster Skeletonization
-8. Path Cleanup And Refitting
-9. Matte Stroke Rules
-10. Debug Overlay Requirements
-11. Validation
-12. Main Deliverable Priority
-13. Invalid Solutions
-14. Lottie Implementation Notes
+4. Reveal Semantics: Directional Wipe vs Shape-Following
+5. Operation Taxonomy
+6. Method Selection Ladder
+7. Contour Pairing And Rail Midpointing
+8. Medial Axis, Straight Skeleton, And Raster Skeletonization
+9. Path Cleanup And Refitting
+10. Matte Stroke Rules
+11. Debug Overlay Requirements
+12. Validation
+13. Main Deliverable Priority
+14. Invalid Solutions
+15. Lottie Implementation Notes
 
 ## Purpose
 
@@ -67,6 +68,30 @@ coverage; keep debug proof separate; finish the actual animation.
   when it produces a clean, intentional reveal route; forcing one route can
   create fake connections, strange reveal ordering, or worse geometry.
 
+## Reveal Semantics: Directional Wipe vs Shape-Following
+
+Two different operations get called "path-driven mask." Pick the right one from
+the prompt:
+
+- **Directional wipe / sweep mask** — a rectangle, vertical/horizontal/diagonal
+  line, radial wipe, or large crossing stroke used as a matte. It reveals by
+  *screen direction*. Valid **only** when the user explicitly asks for a
+  directional wipe, linear reveal, top-to-bottom/scan/sweep reveal, or similar.
+- **Shape-following path-driven mask** — a mask driver that follows the source
+  artwork's *internal* route (source-derived centerline, paired-rail midpoint
+  route, or authored draw route running through the mark). It reveals the artwork
+  *along its own form*, not merely along its outer silhouette or a bounding
+  direction. A path tracing the outline edge, or a line that only shares the
+  shape's overall direction, is not shape-following.
+
+For filled logo/icon reveal prompts — "path-driven mask", "path-driven reveal",
+"path-revealed matte", "shape-following reveal", "single path reveal",
+"centerline reveal", "stroke matte reveal from a filled mark", "mask driver path
+for a filled logo/icon" — default to **shape-following**. A straight line or
+rectangle that merely crosses the shape is a directional wipe, not a
+shape-following reveal; do not substitute one for the other unless the user asked
+for a wipe.
+
 ## Operation Taxonomy
 
 | Source type | Best method | Avoid | Validation signal |
@@ -80,8 +105,10 @@ coverage; keep debug proof separate; finish the actual animation.
 | Complex compound logo/icon | Split into multiple driver paths | Forcing one continuous route | Each part reveals cleanly; ordering reads intentionally |
 | Multi-part mark needing multiple drivers | One driver path per logical part | Merging unrelated parts into one path | Parts stay independent; no fake bridges |
 | Compound filled shape with holes/counters | Preserve fill as visible artwork; use authored or multiple driver paths; contour pairing only where rails are clear | Treating all contours as one route; accidentally filling counters; ignoring fill-rule behavior | Final fill/counter relationship stays correct; driver paths don't destroy negative space |
+| Directional wipe explicitly requested | Rectangle, linear, radial, or simple sweep matte | Calling it a centerline / vectorization | Mid-reveal reads as the requested directional wipe |
+| Shape-following path-driven reveal from a filled mark | Source-derived centerline, paired-rail midpoint route, or authored route | A straight sweep path that merely crosses the shape | Mid-reveal progresses along the mark's structure |
 
-The last row catches letters like `e`, `o`, `a`, cutout icons, and marks with
+The compound-shape row catches letters like `e`, `o`, `a`, cutout icons, and marks with
 interior negative space, where careless path merging breaks fill rules and masks.
 
 ## Method Selection Ladder
@@ -197,6 +224,13 @@ valid debug overlay should make it obvious whether the driver path follows the
 visual center of the source geometry, not merely whether it covers the shape
 after stroke-width inflation.
 
+**Mid-reveal check (shape-following drivers):** inspect a mid-reveal frame.
+*Passes* when the revealed frontier traces the driver route through the mark's
+interior — the exposed region grows along the mark's own form, not as a straight
+screen-aligned edge. *Fails* when it reads as a simple top-to-bottom,
+left-to-right, diagonal, or rectangular crop — that is a directional wipe, wrong
+unless the user requested one.
+
 ## Main Deliverable Priority
 
 - Spend only enough time on the driver path to produce a valid reveal. Do not
@@ -222,6 +256,9 @@ after stroke-width inflation.
 - Unnecessary extra SVG points.
 - Endpoint bloom as the main reveal solution.
 - Forcing one path where geometry needs several.
+- Using a straight vertical/horizontal/diagonal stroke or a rectangle as the
+  matte driver for a shape-following reveal, unless the user explicitly asked for
+  a directional wipe.
 - Debug artifacts replacing the final animation.
 
 ## Lottie Implementation Notes

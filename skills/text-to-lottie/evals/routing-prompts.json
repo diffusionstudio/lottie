@@ -299,5 +299,20 @@
       "references/recipe-product-promo.md",
       "references/recipe-diagram-technical.md"
     ]
+  },
+  {
+    "query": "Animate this filled logo mark with a path-driven mask reveal. Keep the original filled mark visible and reveal it along the mark's shape.",
+    "expected_references": [
+      "references/player-contract.md",
+      "references/single-line-vectorization.md",
+      "references/recipe-logo.md",
+      "references/svg-compatibility.md",
+      "references/motion-taste.md"
+    ],
+    "primary_recipe": "references/recipe-logo.md",
+    "avoid_references": [
+      "references/recipe-svg-animation.md",
+      "references/recipe-product-promo.md"
+    ]
   }
 ]

@@ -187,6 +187,10 @@ normal animation work.
   for poor path placement.
 - No default round caps/joins for sharp polygonal logos.
 - When a debug overlay is requested, it is separate from the final animation.
+- For path-driven mask reveals, reject simple directional wipes
+  (vertical/horizontal/diagonal line or rectangle crossing the shape) when the
+  prompt asks for a source-derived or shape-following reveal; accept a wipe only
+  when the user explicitly requested a directional reveal.
 - The main animation is still completed: wordmark/logo fidelity, composition,
   timing, Lottie structure, and export quality.
 

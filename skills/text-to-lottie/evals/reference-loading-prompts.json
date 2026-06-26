@@ -224,5 +224,28 @@
       "use an authored route or multiple intentional reveal paths for the draw-on",
       "preserve the original filled wordmark as the final visible artwork"
     ]
+  },
+  {
+    "query": "Reveal this filled logo mark with a path-driven mask. Keep the original filled mark visible and reveal it along the mark's shape.",
+    "must_read": [
+      "references/player-contract.md",
+      "references/single-line-vectorization.md",
+      "references/recipe-logo.md",
+      "references/svg-compatibility.md",
+      "references/motion-taste.md"
+    ],
+    "may_read": [
+      "references/design-taste.md"
+    ],
+    "must_not_read": [
+      "references/recipe-svg-animation.md",
+      "references/recipe-product-promo.md"
+    ],
+    "expected_behavior": [
+      "load single-line-vectorization.md",
+      "use the original filled shape as the visible artwork",
+      "use a source-derived or authored shape-following matte driver",
+      "do not substitute a straight directional sweep matte for a shape-following path-driven reveal"
+    ]
   }
 ]

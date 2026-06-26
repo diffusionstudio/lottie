@@ -284,5 +284,20 @@
       "references/recipe-logo.md",
       "references/recipe-starter-projects.md"
     ]
+  },
+  {
+    "query": "Reveal this sharp filled SVG logo mark with a Trim Paths stroke matte. Keep the filled mark visible, derive the mask driver from the mark geometry, and do not round the corners.",
+    "expected_references": [
+      "references/player-contract.md",
+      "references/single-line-vectorization.md",
+      "references/recipe-logo.md",
+      "references/svg-compatibility.md",
+      "references/motion-taste.md"
+    ],
+    "primary_recipe": "references/recipe-logo.md",
+    "avoid_references": [
+      "references/recipe-product-promo.md",
+      "references/recipe-diagram-technical.md"
+    ]
   }
 ]

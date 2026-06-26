@@ -179,5 +179,50 @@
       "default to borderless figures or even self-contained cards separated by whitespace",
       "no outer framing card, one surface tone, and at most a single hairline of one color between equal columns"
     ]
+  },
+  {
+    "query": "Reveal this sharp filled SVG logo mark with a Trim Paths stroke matte, keep the corners crisp, and keep the filled mark as the final visible artwork.",
+    "must_read": [
+      "references/player-contract.md",
+      "references/single-line-vectorization.md",
+      "references/recipe-logo.md",
+      "references/svg-compatibility.md",
+      "references/motion-taste.md"
+    ],
+    "may_read": [
+      "references/design-taste.md"
+    ],
+    "must_not_read": [
+      "references/recipe-product-promo.md",
+      "references/recipe-diagram-technical.md"
+    ],
+    "expected_behavior": [
+      "keep the original fill as the visible artwork and use the derived path only as the hidden matte driver",
+      "derive a contour-based driver path from the SVG geometry, not by visual guessing or stroking the original outline",
+      "use a stable matte stroke width with source-matched sharp caps/joins, no default rounding",
+      "do not accept coverage-only validation; check the driver path is centered and the reveal order reads correctly"
+    ]
+  },
+  {
+    "query": "Draw this filled script wordmark on like handwriting, but keep the original filled lettering as the final visible artwork.",
+    "must_read": [
+      "references/player-contract.md",
+      "references/single-line-vectorization.md",
+      "references/recipe-typography.md",
+      "references/motion-taste.md"
+    ],
+    "may_read": [
+      "references/recipe-logo.md",
+      "references/design-taste.md"
+    ],
+    "must_not_read": [
+      "references/recipe-product-promo.md",
+      "references/recipe-diagram-technical.md"
+    ],
+    "expected_behavior": [
+      "do not pretend the filled outline text is automatically a true single-line handwriting path",
+      "use an authored route or multiple intentional reveal paths for the draw-on",
+      "preserve the original filled wordmark as the final visible artwork"
+    ]
   }
 ]

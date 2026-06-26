@@ -54,6 +54,10 @@ marks, and SVG logo sources.
   effects unless the user requests that personality.
 - If a background is requested, expose `bgColor` and keep logo colors editable
   only when useful.
+- For filled logo marks that need single-path, Trim Paths, or matte-driven
+  reveals, route to `references/single-line-vectorization.md`. Preserve the
+  original filled mark as the visible artwork; use the derived path only as the
+  hidden reveal/matte driver.
 
 ## Common Failure Modes
 

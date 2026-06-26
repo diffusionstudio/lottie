@@ -47,6 +47,7 @@ inline rules in this file.
 | Long text, multiple ideas, list/features/steps, timeline, before/after, problem/solution, quote+proof, recap/story, product walkthrough, multi-language variations, chapters, multi-beat sequence, episode, jump/hard cuts, transition grammar | `references/chapterization-transition-grammar.md`, `references/motion-taste.md` |
 | Glow, glass, metal, gradient, fill, bubble/burst effects | `references/recipe-visual-effects.md`, `references/design-taste.md`, `references/motion-taste.md` |
 | SVG input inside logo/icon/UI/lower-third work | The task recipe plus `references/svg-compatibility.md` |
+| Single path, centerline, or one-stroke driver from a filled SVG/logo/icon; stroke matte or path-revealed matte; Trim Paths reveal from a filled mark; handwriting-style reveal; outline-to-centerline; or mask driver path | `references/single-line-vectorization.md`, plus the task recipe and `references/svg-compatibility.md` |
 | Starter brief or reusable project direction | `references/recipe-starter-projects.md`, `references/design-taste.md`, `references/motion-taste.md` |
 | Any "premium", "clean", "minimal", "modern", "sleek", or "polished" qualifier | `references/design-taste.md` (restraint defaults), plus the routed recipe |
 

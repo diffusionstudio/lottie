@@ -175,6 +175,21 @@ normal animation work.
 - Prefer color quarantine, semantic accents, warm neutrals, hairlines, tonal
   depth, and whitespace before adding decorative effects.
 
+## Single-Line Vectorization Quality
+
+- The final visible artwork preserves the source fill geometry.
+- The derived driver path is not treated as the visible artwork unless requested.
+- The centerline/matte path is contour-derived when possible, not visually
+  guessed or stroked from the original outline.
+- Coverage-only validation is not accepted: a matte that covers the shape while
+  the path is off-center or mis-routed fails.
+- Stable matte stroke width is preferred; no animated stroke-width compensation
+  for poor path placement.
+- No default round caps/joins for sharp polygonal logos.
+- When a debug overlay is requested, it is separate from the final animation.
+- The main animation is still completed: wordmark/logo fidelity, composition,
+  timing, Lottie structure, and export quality.
+
 ## Prompt Robustness Cases
 
 - "Create a clean technical architecture diagram animation for a checkout flow."

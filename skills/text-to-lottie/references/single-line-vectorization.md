@@ -35,8 +35,8 @@ matte, or mask animation — not the visible artwork. The visible layer normally
 stays the original filled SVG.
 
 Decision system, in order: preserve the source artwork; classify the source
-geometry; choose the correct driver-path method; for ribbon-like polygon marks
-prefer paired-rail midpointing; use skeletonization only when appropriate, then
+geometry; choose the correct driver-path method; for rail-clear ribbon marks
+require paired-rail midpointing first; use skeletonization only when appropriate, then
 prune and refit; do not force one path when multiple are cleaner; keep matte
 strokes stable and technical; validate centeredness and reveal order, not just
 coverage; keep debug proof separate; finish the actual animation.
@@ -106,7 +106,7 @@ for a wipe.
 | Multi-part mark needing multiple drivers | One driver path per logical part | Merging unrelated parts into one path | Parts stay independent; no fake bridges |
 | Compound filled shape with holes/counters | Preserve fill as visible artwork; use authored or multiple driver paths; contour pairing only where rails are clear | Treating all contours as one route; accidentally filling counters; ignoring fill-rule behavior | Final fill/counter relationship stays correct; driver paths don't destroy negative space |
 | Directional wipe explicitly requested | Rectangle, linear, radial, or simple sweep matte | Calling it a centerline / vectorization | Mid-reveal reads as the requested directional wipe |
-| Shape-following path-driven reveal from a filled mark | Source-derived centerline, paired-rail midpoint route, or authored route | A straight sweep path that merely crosses the shape | Mid-reveal progresses along the mark's structure |
+| Shape-following path-driven reveal from a filled mark | Paired-rail midpoint route (required first for rail-clear ribbons); source-derived centerline; authored route only when rails are unavailable/ambiguous | A straight sweep path that merely crosses the shape; a visually authored spine that skips rail midpointing | Mid-reveal progresses along the mark's structure |
 
 The compound-shape row catches letters like `e`, `o`, `a`, cutout icons, and marks with
 interior negative space, where careless path merging breaks fill rules and masks.
@@ -117,8 +117,9 @@ Choose methods in this order:
 
 1. **Reuse an existing real stroke path** if the SVG already contains one.
 2. **Ribbon-like polygon marks with visible inner and outer rails → paired-rail
-   midpointing is the DEFAULT method.** Do not jump to raster skeletonization
-   unless rail pairing fails.
+   midpointing is the REQUIRED first attempt.** Do not jump to raster
+   skeletonization, and do not substitute a visually authored spine, unless rail
+   pairing fails or is documented as unsuitable.
 3. **Angular polygonal shapes** → contour pairing, or straight-skeleton /
    medial-axis reasoning, then prune.
 4. **Organic brush shapes** → raster skeletonization as a fallback, then
@@ -137,19 +138,34 @@ Do not force a single continuous path when the geometry needs several.
 
 ## Contour Pairing And Rail Midpointing
 
-For ribbon-like polygon marks with visible inner and outer rails, paired-rail
-midpointing is the default — do not jump to raster skeletonization unless rail
-pairing fails. It is preferred for folded ribbons, flags, bolts, monograms, and
-tube-like logos.
+**Classify ribbon/tube marks first.** If a filled mark shows band/ribbon
+structure, visible inner and outer rails, folded-strip geometry, or a consistent
+visual stroke body, classify it as ribbon/tube-like *before* treating it as a
+generic polygon or an authored-route problem. This applies to folded ribbons,
+flags, bolts, monograms, and tube-like logos.
 
-Procedure:
+For rail-clear ribbon marks, paired-rail midpointing is the **required first
+attempt**, not optional taste guidance. Do not replace it with a visually
+authored or "designed" spine unless rail pairing is unavailable, ambiguous, or
+documented as unsuitable. Authored routes are for handwriting, ambiguous compound
+marks, or deliberate creative draw order — not a shortcut for rail-clear
+ribbon/tube marks. Do not jump to raster skeletonization unless rail pairing
+fails.
+
+Procedure (work from the source SVG contours, not a render):
 
 1. Identify the outer and inner rails of the shape.
-2. Pair corresponding rail segments by route order and geometric role.
-3. Sample points along the paired rails.
+2. Pair corresponding rail segments by route order and geometric role, not by
+   random nearest points.
+3. Sample corresponding points along the paired rails.
 4. Compute midpoint samples between paired points.
-5. Connect the midpoint samples into the intended route.
+5. Connect the midpoint samples into the intended reveal route.
 6. Refit as a clean path (see Path Cleanup And Refitting).
+
+**Minimum proof (rail-clear ribbon marks)** — before using the route as the matte
+driver: identify the paired rail segments; show midpoint samples/dots; show short
+normal guides or paired-boundary distance notes for representative samples; and
+confirm the driver path sits between the rails.
 
 ## Medial Axis, Straight Skeleton, And Raster Skeletonization
 
@@ -206,6 +222,10 @@ centerline is nontrivial, in a *separate* debug scene or debug section containin
 - optional normal guides from midpoint samples to paired rails,
 - optional note for ambiguous segments.
 
+Debug overlays may use colored strokes and dots for readability, but production
+matte settings must still follow the Matte Stroke Rules. Do not let debug styling
+become production matte styling.
+
 Debug geometry must never replace the final animation. The final production scene
 stays clean. Do not spend the whole run building a geometry sandbox.
 
@@ -256,6 +276,8 @@ unless the user requested one.
 - Unnecessary extra SVG points.
 - Endpoint bloom as the main reveal solution.
 - Forcing one path where geometry needs several.
+- Using an authored or visually designed spine for a rail-clear ribbon mark
+  without first attempting paired-rail midpointing.
 - Using a straight vertical/horizontal/diagonal stroke or a rectangle as the
   matte driver for a shape-following reveal, unless the user explicitly asked for
   a directional wipe.

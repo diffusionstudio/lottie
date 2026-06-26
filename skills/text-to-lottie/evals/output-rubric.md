@@ -181,6 +181,9 @@ normal animation work.
 - The derived driver path is not treated as the visible artwork unless requested.
 - The centerline/matte path is contour-derived when possible, not visually
   guessed or stroked from the original outline.
+- For rail-clear ribbon/tube-like filled marks, fail outputs that use a visually
+  authored spine without showing paired-rail midpointing, midpoint samples, or
+  equivalent centeredness proof.
 - Coverage-only validation is not accepted: a matte that covers the shape while
   the path is off-center or mis-routed fails.
 - Stable matte stroke width is preferred; no animated stroke-width compensation

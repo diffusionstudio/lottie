@@ -245,6 +245,7 @@
       "load single-line-vectorization.md",
       "use the original filled shape as the visible artwork",
       "use a source-derived or authored shape-following matte driver",
+      "for a rail-clear ribbon/tube mark, attempt paired-rail midpointing first and show midpoint/centeredness proof before falling back to an authored route",
       "do not substitute a straight directional sweep matte for a shape-following path-driven reveal"
     ]
   }

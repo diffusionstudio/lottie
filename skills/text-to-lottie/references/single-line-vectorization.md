@@ -18,14 +18,15 @@ the cleanest representation.
 5. Operation Taxonomy
 6. Method Selection Ladder
 7. Contour Pairing And Rail Midpointing
-8. Medial Axis, Straight Skeleton, And Raster Skeletonization
-9. Path Cleanup And Refitting
-10. Matte Stroke Rules
-11. Debug Overlay Requirements
-12. Validation
-13. Main Deliverable Priority
-14. Invalid Solutions
-15. Lottie Implementation Notes
+8. Geometry Sandbox Contract
+9. Medial Axis, Straight Skeleton, And Raster Skeletonization
+10. Path Cleanup And Refitting
+11. Matte Stroke Rules
+12. Debug Overlay Requirements
+13. Validation
+14. Main Deliverable Priority
+15. Invalid Solutions
+16. Lottie Implementation Notes
 
 ## Purpose
 
@@ -36,7 +37,8 @@ stays the original filled SVG.
 
 Decision system, in order: preserve the source artwork; classify the source
 geometry; choose the correct driver-path method; for rail-clear ribbon marks
-require paired-rail midpointing first; use skeletonization only when appropriate, then
+require paired-rail midpointing first, derived through a minimal geometry sandbox;
+use skeletonization only when appropriate, then
 prune and refit; do not force one path when multiple are cleaner; keep matte
 strokes stable and technical; validate centeredness and reveal order, not just
 coverage; keep debug proof separate; finish the actual animation.
@@ -106,7 +108,7 @@ for a wipe.
 | Multi-part mark needing multiple drivers | One driver path per logical part | Merging unrelated parts into one path | Parts stay independent; no fake bridges |
 | Compound filled shape with holes/counters | Preserve fill as visible artwork; use authored or multiple driver paths; contour pairing only where rails are clear | Treating all contours as one route; accidentally filling counters; ignoring fill-rule behavior | Final fill/counter relationship stays correct; driver paths don't destroy negative space |
 | Directional wipe explicitly requested | Rectangle, linear, radial, or simple sweep matte | Calling it a centerline / vectorization | Mid-reveal reads as the requested directional wipe |
-| Shape-following path-driven reveal from a filled mark | Paired-rail midpoint route (required first for rail-clear ribbons); source-derived centerline; authored route only when rails are unavailable/ambiguous | A straight sweep path that merely crosses the shape; a visually authored spine that skips rail midpointing | Mid-reveal progresses along the mark's structure |
+| Shape-following path-driven reveal from a filled mark | Paired-rail midpoint route (required first for rail-clear ribbons, built via the geometry sandbox); source-derived centerline; authored route only after a documented rail-pairing failure | A straight sweep path that merely crosses the shape; a visually authored spine that skips rail midpointing | Mid-reveal progresses along the mark's structure |
 
 The compound-shape row catches letters like `e`, `o`, `a`, cutout icons, and marks with
 interior negative space, where careless path merging breaks fill rules and masks.
@@ -117,9 +119,10 @@ Choose methods in this order:
 
 1. **Reuse an existing real stroke path** if the SVG already contains one.
 2. **Ribbon-like polygon marks with visible inner and outer rails → paired-rail
-   midpointing is the REQUIRED first attempt.** Do not jump to raster
-   skeletonization, and do not substitute a visually authored spine, unless rail
-   pairing fails or is documented as unsuitable.
+   midpointing is the REQUIRED first attempt, run through the geometry sandbox.**
+   Do not jump to raster skeletonization, and do not substitute a visually
+   authored spine, unless rail pairing fails and the failure is documented (see
+   the Authored-route fallback rule).
 3. **Angular polygonal shapes** → contour pairing, or straight-skeleton /
    medial-axis reasoning, then prune.
 4. **Organic brush shapes** → raster skeletonization as a fallback, then
@@ -145,12 +148,12 @@ generic polygon or an authored-route problem. This applies to folded ribbons,
 flags, bolts, monograms, and tube-like logos.
 
 For rail-clear ribbon marks, paired-rail midpointing is the **required first
-attempt**, not optional taste guidance. Do not replace it with a visually
-authored or "designed" spine unless rail pairing is unavailable, ambiguous, or
-documented as unsuitable. Authored routes are for handwriting, ambiguous compound
-marks, or deliberate creative draw order — not a shortcut for rail-clear
-ribbon/tube marks. Do not jump to raster skeletonization unless rail pairing
-fails.
+attempt**, not optional taste guidance. For these marks an authored route is
+**not a peer option** — it is invalid unless you first attempt paired-rail
+midpointing and document, in writing, why it failed (see fallback rule below).
+Authored routes are for handwriting, ambiguous compound marks, or deliberate
+creative draw order — not a shortcut for rail-clear ribbon/tube marks. Do not
+jump to raster skeletonization unless rail pairing fails.
 
 Procedure (work from the source SVG contours, not a render):
 
@@ -162,10 +165,59 @@ Procedure (work from the source SVG contours, not a render):
 5. Connect the midpoint samples into the intended reveal route.
 6. Refit as a clean path (see Path Cleanup And Refitting).
 
+**Algorithm checklist (paired-rail midpointing):**
+
+- parse SVG paths and resolve transforms,
+- identify candidate rail polylines or path segments,
+- order rails by intended reveal route,
+- sample corresponding rail points by normalized arclength or manually mapped
+  segment pairs,
+- compute midpoint samples,
+- preserve sharp corners where the source is angular,
+- refit as a polyline or minimal cubic path,
+- choose matte stroke width from rail distance, not by guessing,
+- validate mid-reveal, not only final coverage.
+
 **Minimum proof (rail-clear ribbon marks)** — before using the route as the matte
 driver: identify the paired rail segments; show midpoint samples/dots; show short
 normal guides or paired-boundary distance notes for representative samples; and
 confirm the driver path sits between the rails.
+
+**Authored-route fallback (rail-clear ribbon/tube marks only).** An authored
+route is invalid for these marks unless you first document why paired-rail
+midpointing failed. The fallback note must state:
+
+- what rail pairing was attempted,
+- which segment was ambiguous or unavailable,
+- why midpointing would be unreliable there,
+- a debug note or overlay proving the authored fallback still follows the visual
+  center.
+
+Without this documented failure, an authored or "designed" spine for a rail-clear
+ribbon mark is an invalid solution.
+
+## Geometry Sandbox Contract
+
+For rail-clear ribbon/tube marks and other nontrivial filled marks that need a
+shape-following path-driven mask, build a minimal geometry sandbox **before**
+authoring the production scene. This is a required derivation pass with concrete
+file artifacts, not a belief or a prose intent. Produce:
+
+- `scripts/<slug>-centerline/` — the sandbox directory,
+- a copy of the source SVG (or a normalized SVG) kept inside it,
+- a derivation script, e.g. `derive_centerline.py`,
+- `centerline.json` (or equivalent sampled midpoint data) as output,
+- a debug overlay SVG **or** Lottie scene showing: the original filled mark at low
+  opacity, the outer rail, the inner rail, the paired rail segments, the midpoint
+  samples, the derived driver route, and optional normal guides / equal-distance
+  checks,
+- a separate debug scene/project when useful, e.g.
+  `public/projects/<slug>-centerline-debug/scene-1/lottie.json`.
+
+Then carry the **approved driver route** into the production Lottie, where the
+original filled mark stays the visible artwork. Keep the sandbox small and
+time-boxed: do the geometry proof, then finish production. Do not stop at the
+sandbox, and do not ship the debug route as the visible artwork.
 
 ## Medial Axis, Straight Skeleton, And Raster Skeletonization
 
@@ -211,8 +263,17 @@ These find a center skeleton, but they are a **fallback, not the main move**.
 
 ## Debug Overlay Requirements
 
-Debug overlays are conditional, not mandatory. Create one on request, or when the
-centerline is nontrivial, in a *separate* debug scene or debug section containing:
+A debug overlay is **optional only for simple stroke reuse** (an existing real
+stroke path you reuse directly). It is **mandatory** for:
+
+- rail-clear ribbon/tube marks,
+- filled marks where the prompt asks for a centerline, single path, path-driven
+  reveal, path-revealed matte, stroke matte, or shape-following reveal,
+- any case where an authored route would otherwise be tempting.
+
+When mandatory, the overlay is the proof the derived route is centered — produce
+it as part of the geometry sandbox. Create it in a *separate* debug scene or
+debug section containing:
 
 - original fill at low opacity,
 - original contours,
@@ -227,7 +288,9 @@ matte settings must still follow the Matte Stroke Rules. Do not let debug stylin
 become production matte styling.
 
 Debug geometry must never replace the final animation. The final production scene
-stays clean. Do not spend the whole run building a geometry sandbox.
+stays clean. Build the geometry sandbox for nontrivial marks, but keep it small
+and time-boxed: do not stop at the sandbox, and carry the derived route into the
+finished production animation. Do the geometry proof, then finish production.
 
 ## Validation
 
@@ -253,8 +316,9 @@ unless the user requested one.
 
 ## Main Deliverable Priority
 
-- Spend only enough time on the driver path to produce a valid reveal. Do not
-  over-engineer a general geometry solver inside the task.
+- Spend only enough time on the driver path to produce a valid reveal: run the
+  geometry sandbox for nontrivial marks, keep it minimal, then finish production.
+  Do not over-engineer a general geometry solver, and do not stop at the sandbox.
 - If a segment is ambiguous, make a minimal documented route-selection decision,
   create a debug note if needed, and continue the main animation.
 - Still finish the real work: original artwork preservation, logo/wordmark
@@ -277,7 +341,12 @@ unless the user requested one.
 - Endpoint bloom as the main reveal solution.
 - Forcing one path where geometry needs several.
 - Using an authored or visually designed spine for a rail-clear ribbon mark
-  without first attempting paired-rail midpointing.
+  without first attempting paired-rail midpointing and documenting why it failed
+  (attempted pairing, ambiguous/unavailable segment, why midpointing is
+  unreliable, and proof the fallback still follows the visual center).
+- Skipping the geometry sandbox (derivation script + sampled centerline + debug
+  overlay) for a nontrivial filled mark, or stopping at the sandbox without
+  carrying the derived route into the finished production animation.
 - Using a straight vertical/horizontal/diagonal stroke or a rectangle as the
   matte driver for a shape-following reveal, unless the user explicitly asked for
   a directional wipe.
@@ -290,7 +359,9 @@ unless the user requested one.
 - Trim Paths animates the helper stroke.
 - The matte reveals the original fill.
 - Wordmark and other logo parts remain separate animation layers.
-- The debug scene is optional and separate.
+- The debug scene stays separate from production; it is mandatory for rail-clear
+  ribbon/tube and shape-following reveals (see Geometry Sandbox Contract) and
+  optional only for simple stroke reuse.
 - **Reveal order:** choose it intentionally. The driver path should follow the
   direction the mark should appear to be drawn. Do not let SVG contour order
   decide motion order by accident — a geometrically valid path still animates

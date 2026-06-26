@@ -184,6 +184,19 @@ normal animation work.
 - For rail-clear ribbon/tube-like filled marks, fail outputs that use a visually
   authored spine without showing paired-rail midpointing, midpoint samples, or
   equivalent centeredness proof.
+- For rail-clear ribbon/tube and other nontrivial filled marks needing a
+  shape-following reveal, a geometry sandbox pass is expected before production:
+  a `scripts/<slug>-centerline/` folder, a derivation script (e.g.
+  `derive_centerline.py`), sampled rail/midpoint data (e.g. `centerline.json`),
+  and a separate debug overlay scene or SVG. Fail outputs that skip these
+  artifacts or satisfy the task only with prose-level intent.
+- An authored route for a rail-clear ribbon mark is accepted only with a
+  documented paired-rail-midpointing failure (what was attempted, which segment
+  was ambiguous/unavailable, why midpointing is unreliable, proof the fallback
+  still follows the visual center).
+- Fail outputs that stop at the sandbox: the approved derived route must be
+  carried into the finished production scene, and the original filled artwork —
+  not the debug route — must remain the visible layer.
 - Coverage-only validation is not accepted: a matte that covers the shape while
   the path is off-center or mis-routed fails.
 - Stable matte stroke width is preferred; no animated stroke-width compensation
@@ -221,3 +234,11 @@ normal animation work.
 - "Create a pitch-slide chart showing revenue growing 11% month over month."
 - "Make a generative loader from one repeated dot primitive."
 - "Create a clean ambient background behind a headline, no generic particles."
+- "Animate this filled twisted ribbon loop logo mark as a Lottie. Keep the
+  original filled mark visible. Reveal only the ribbon using a shape-following
+  path-revealed matte. Derive the matte driver from the mark geometry."
+  (Regression: a rail-clear ribbon mark with curved rails must produce a geometry
+  sandbox — `scripts/<slug>-centerline/`, a derivation script, rail/midpoint
+  JSON, and a separate debug overlay — refit the curved rails as a cubic path,
+  and carry the derived route into the production scene, not stop at an authored
+  spine or the debug route.)

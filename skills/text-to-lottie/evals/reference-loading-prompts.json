@@ -248,5 +248,33 @@
       "for a rail-clear ribbon/tube mark, attempt paired-rail midpointing first and show midpoint/centeredness proof before falling back to an authored route",
       "do not substitute a straight directional sweep matte for a shape-following path-driven reveal"
     ]
+  },
+  {
+    "query": "Animate this filled twisted ribbon loop logo mark as a Lottie. Keep the original filled mark visible. Reveal only the ribbon using a shape-following path-revealed matte. Derive the matte driver from the mark geometry.",
+    "must_read": [
+      "references/player-contract.md",
+      "references/single-line-vectorization.md",
+      "references/recipe-logo.md",
+      "references/svg-compatibility.md",
+      "references/motion-taste.md"
+    ],
+    "may_read": [
+      "references/design-taste.md"
+    ],
+    "must_not_read": [
+      "references/recipe-product-promo.md",
+      "references/recipe-diagram-technical.md"
+    ],
+    "expected_behavior": [
+      "classify the twisted ribbon loop as rail-clear ribbon/tube-like before treating it as a generic polygon or authored-route problem",
+      "create a geometry sandbox folder scripts/<slug>-centerline/ with a copy of the source or normalized SVG",
+      "create a derivation script such as derive_centerline.py",
+      "output midpoint samples or centerline.json from the paired rails",
+      "create a separate debug overlay scene or SVG showing the fill at low opacity, both rails, paired segments, midpoint samples, and the derived route",
+      "refit the curved rails as a minimal cubic path rather than forcing angular corners",
+      "do not use a visually authored spine unless a paired-rail-midpointing failure is documented",
+      "carry the derived driver route into the production scene where the original filled artwork stays visible, not the debug route",
+      "finish the production Lottie cleanly rather than stopping at the sandbox"
+    ]
   }
 ]

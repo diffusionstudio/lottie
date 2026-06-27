@@ -504,7 +504,7 @@ def write_coverage_svg(path, poly, railA, railB_rev, capA, capB, centerline_vert
     """Flat, dev-server-free, HONEST proof of the matte footprint.
 
     The footprint is drawn exactly as production strokes it — the cap-extended
-    reveal order, BUTT caps (lc:1), miter joins clamped to the production limit
+    reveal order, round caps (lc:2), miter joins clamped to the production limit
     (ml:8) — then the fill is painted opaque white ON TOP so the only footprint
     that survives is what pokes OUTSIDE the fill. So the eye sees just the spill,
     coloured by what it means:
@@ -550,8 +550,8 @@ def write_coverage_svg(path, poly, railA, railB_rev, capA, capB, centerline_vert
     p = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{vb}">']
     p.append(f'<rect x="{minx - pad:.2f}" y="{miny - pad:.2f}" '
              f'width="{vw:.2f}" height="{vh:.2f}" fill="#ffffff"/>')
-    # 1. matte footprint, production-accurate (butt caps, ml:8), in amber
-    p += footprint("#f5a623", "0.95", 1)
+    # 1. matte footprint, production-accurate (round caps lc:2, ml:8), in amber
+    p += footprint("#f5a623", "0.95", 2)
     # 2. paint the fill opaque white ON TOP -> only the OUTSIDE-fill spill remains
     p.append(f'<path d="{_poly_d(poly)}" fill="#ffffff"/>')
     # 3. faint fill tint for context (over the white)
@@ -738,14 +738,16 @@ def main():
     # order V0..Vn; reverse it when the reveal starts from cap B)
     widths_ordered = matte_width_profile if start_is_A else matte_width_profile[::-1]
 
-    # --- cap extension (pairs with a BUTT cap, lc:1, in production) ---
+    # --- cap extension (pairs with a ROUND cap, lc:2, in production) ---
     # A square cap (lc:3) projects half the stroke width past the start vertex the
     # instant Trim leaves 0, so the reveal "pops" a full-width blob at frame 1
-    # instead of growing from a point. A butt cap removes that projection, but
-    # would then leave a half-width of fill UNrevealed at each cap. So push the two
-    # terminal vertices outward along their own segment by half the local matte
-    # width: the flat butt end then lands on the true cap edge — clean point-start,
-    # full finish. This is geometry, NOT a trim change (the trim still runs 0->100).
+    # instead of growing from a point. Pushing the two terminal vertices outward
+    # along their own segment by half the local matte width puts the true cap edge
+    # at the extended endpoint, so the round cap's start/end disc blooms OVER
+    # background (clipped away by the track matte) — clean point-start, full finish,
+    # and no half-width of fill left unrevealed. (Round, not butt: the round cap is
+    # what keeps interior corner/fold crossings notch-free; see the route note.)
+    # This is geometry, NOT a trim change (the trim still runs 0->100).
     def _extend_caps(order, w_ord):
         v = [list(p) for p in order]
         if len(v) >= 2:
@@ -782,20 +784,25 @@ def main():
             "end_point": cap_B_pt if start_is_A else cap_A_pt,
             "matte_vertex_order": [list(p) for p in matte_order_capext],
             "matte_vertex_order_raw": [list(p) for p in matte_order],
-            "matte_linecap": 1,
+            "matte_linecap": 2,
             "cap_extension": {
                 "start_halfwidth": round(widths_ordered[0] / 2.0, 3),
                 "end_halfwidth": round(widths_ordered[-1] / 2.0, 3),
                 "note": ("matte_vertex_order is already cap-extended; build the "
-                         "production stroke from it with lc:1 (butt). The raw "
-                         "(un-extended) route is matte_vertex_order_raw."),
+                         "production stroke from it with lc:2 (round) — the round "
+                         "cap sweeps interior corner/fold crossings without a notch "
+                         "and rounds only the moving frontier, never the settled "
+                         "mark. The raw (un-extended) route is matte_vertex_order_raw."),
             },
             "reveal_span": [0, 100],
             "note": ("Trim Paths reveals in matte_vertex_order; the production "
                      "matte polyline must use this order so the reveal starts at "
-                     "start_cap. Stroke it with lc:1 (butt) — the order is already "
-                     "extended half a width past each cap so a butt end still "
-                     "covers the full cap."),
+                     "start_cap. Stroke it with lc:2 (round), lj:1 (miter) — the "
+                     "round cap sweeps interior corner/fold crossings cleanly "
+                     "(a butt cap notches there), while the miter join keeps the "
+                     "settled mark sharp. The order is already extended half a width "
+                     "past each cap so the round start/end disc blooms over "
+                     "background (clipped) and the reveal still covers each cap."),
             "trim_note": ("The production Trim Paths `e` keyframe value MUST run "
                           "0->100 and the first matte vertex MUST be the true "
                           "start cap. Never trim in from 10/20 to hide a bad first "
@@ -803,8 +810,9 @@ def main():
                           "sufficient — a square cap (lc:3) blooms a full-width "
                           "blob at the first nonzero frame even when the trim "
                           "starts at 0, which reads as 'reveal starts at ~5-10%'. "
-                          "Use lc:1 (butt) with the cap-extended order above so "
-                          "the reveal grows from a point."),
+                          "Use lc:2 (round) with the cap-extended order above so "
+                          "the reveal grows from a point and corner crossings stay "
+                          "notch-free."),
         },
     }
     with open(args.out, "w") as f:

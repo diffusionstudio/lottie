@@ -24,8 +24,8 @@ pairing** — not a raster skeleton, not a guessed route.
    - `route_decision.matte_vertex_order` → the matte polyline (`c:false`),
    - if `width_decision` is `single-width` → `recommended_matte_width` (one fixed stroke);
      if `per-section` → `matte_width_profile[i]` per section (one open sub-path each),
-   - set `lc:1` (butt), `lj:1`, `ml:8` for sharp marks; the route is cap-extended so a butt end still covers each cap (avoids the frame-1 square-cap bloom),
-   - assert the Trim `e` value runs **0 → 100** with the first vertex at the start cap.
+   - set `lc:2` (round cap), `lj:1` (miter join), `ml:8` for sharp marks — the round cap sweeps interior corner/fold crossings without a notch and rounds only the moving frontier (the miter join keeps the settled mark sharp); the route is cap-extended so the round start/end disc blooms over background (clipped) and still covers each cap, avoiding the frame-1 square-cap bloom,
+   - assert the Trim `e` value runs **0 → 100** with the first vertex at the start cap, and inspect the corner-crossing frames (frontier passing each sharp fold) — a clean settled frame is not proof they are notch-free.
    If `centerline.svg` shows red bleed or heavy spill, switch to the per-section matte or
    reconsider the route — do not widen and hope.
 5. A separate Lottie debug *scene* is optional richer proof; `centerline.svg` is the

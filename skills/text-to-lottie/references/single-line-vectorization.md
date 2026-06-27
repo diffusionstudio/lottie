@@ -294,15 +294,29 @@ These find a center skeleton, but they are a **fallback, not the main move**.
   ε** so the matte stays continuous (a step at the join can flash a gap during the reveal).
   All sub-paths share **one coordinated Trim** so the reveal reads as a single frontier
   (see `scripts/centerline/build_matte_snippet.md`).
-- **Sharp polygonal marks → exact Lottie values: `"lc": 1` (butt cap), `"lj": 1`
-  (miter join), `"ml": 8`.** Never `"lc": 2` / `"lj": 2` (round) by default — round
-  caps/joins are the rounded-mask regression. Use round only when the source
-  geometry is genuinely round. **Butt, not square:** a square cap (`lc:3`) projects half
-  the width past the start vertex the moment Trim leaves 0, blooming a full-width blob at
-  frame 1 (reads as "reveal starts at ~5–10%"). The solver emits a **cap-extended**
-  `matte_vertex_order` (pushed out half a width at each end), so a butt cap reveals from a
-  point yet still covers each cap fully. (`lc`: 1=butt, 2=round, 3=square; `lj`: 1=miter,
-  2=round, 3=bevel.)
+- **Sharp polygonal marks → exact Lottie values: `"lc": 2` (round cap), `"lj": 1`
+  (miter join), `"ml": 8`.** **Cap and join are separate decisions — do not conflate
+  them.** The matte is a *track matte* over the sharp fill, so the **join** governs the
+  *settled* mark and the **cap** governs only the *moving reveal frontier*:
+  - **Join stays miter (`lj:1`).** Never `"lj": 2` (round join) on a sharp mark — a round
+    join rounds the *settled* artwork (the rounded-mask regression). This ban is real and
+    unchanged.
+  - **Cap is round (`lc:2`), not butt or square.** As the Trim frontier crosses an interior
+    corner/fold, the leading cap is perpendicular to the *local* tangent and cannot match
+    both segment directions at once. A flat **butt** cap (`lc:1`) leaves a hard step — a
+    transient **zigzag/notch** in the corner pocket — that scales with ½·width·tan(turn/2),
+    so a wide matte makes it obvious. A **round** cap sweeps the corner as a smooth moving
+    front with no step. Because the matte only reveals the fill, the round cap rounds *only
+    the frontier*; the **settled mark stays 100% sharp** (it is the sharp fill). This is the
+    opposite of a round join, and is **not** the rounded-mask regression.
+  - **Round, not square, at the start:** a square cap (`lc:3`) projects half the width past
+    the start vertex the moment Trim leaves 0, blooming a full-width blob at frame 1 (reads
+    as "reveal starts at ~5–10%"). The solver emits a **cap-extended** `matte_vertex_order`
+    (pushed out half a width at each end); the round cap's start/end disc then blooms over
+    *background* (clipped, invisible), so the reveal still grows from a point and each cap is
+    still fully covered. A round cap reaches no further than a butt cap, so it never worsens
+    bleed — the containment pass still governs tight folds. (`lc`: 1=butt, 2=round, 3=square;
+    `lj`: 1=miter, 2=round, 3=bevel.)
 - Keep driver coordinates in the **source viewBox/coordinate space** so the matte
   registers with the fill; do not rescale the centerline independently of the fill.
 - If a renderer cannot honor miter/square, compensate by path placement and stable
@@ -366,7 +380,17 @@ after stroke-width inflation.
 interior — the exposed region grows along the mark's own form, not as a straight
 screen-aligned edge. *Fails* when it reads as a simple top-to-bottom,
 left-to-right, diagonal, or rectangular crop — that is a directional wipe, wrong
-unless the user requested one.
+unless the user requested one. This check validates route/direction only — it does
+**not** catch the corner-crossing notch below.
+
+**Corner-crossing frame check (sharp folds):** the mid-reveal check above passes
+even when the moving frontier flashes a notch, because the route is correct. So
+inspect the frames where the frontier *crosses each sharp interior corner/fold*,
+not just one arbitrary mid frame. *Passes* when the frontier rotates smoothly
+through the fold. *Fails* when a transient zigzag/notch/step appears at the corner
+even though the settled frame is clean — the butt-cap frontier artifact. The fix is
+`lc:2` (round cap) on the reveal matte (see Matte Stroke Rules); a clean settled
+frame is **not** proof the crossing frames are clean.
 
 ## Verification Checklist
 
@@ -382,9 +406,13 @@ Before shipping a shape-following reveal from a filled mark, confirm:
   corners are flagged `ambiguous`.
 - **Route:** `route_decision` (start cap + vertex order) is recorded and matches the
   rendered reveal direction.
-- **Matte stroke:** `lc:1` (butt) + cap-extended `matte_vertex_order`, `lj:1, ml:8` for
-  sharp marks (never `lc:2`/`lj:2`, and not `lc:3` — square blooms at frame 1); width
-  fixed (`"a":0`), no width keyframes; coords in the source viewBox space.
+- **Matte stroke:** `lc:2` (round cap) + cap-extended `matte_vertex_order`, `lj:1, ml:8`
+  for sharp marks (round **cap** sweeps corner crossings clean and rounds only the moving
+  frontier, never the settled mark; **never `lj:2`** round join — that rounds the settled
+  mark; not `lc:3` — square blooms at frame 1); width fixed (`"a":0`), no width keyframes;
+  coords in the source viewBox space.
+- **Frontier at corners:** the corner-crossing frames (frontier passing each sharp fold)
+  are rendered and clean — no transient notch. A clean settled frame is not proof.
 - **Width decision:** `width_spread` reported and the width decision recorded —
   single fixed width vs per-section `matte_width_profile`.
 - **Containment:** `centerline.svg` exists and shows **no red** (no cross-limb bleed) —
@@ -393,7 +421,8 @@ Before shipping a shape-following reveal from a filled mark, confirm:
 - **Trim:** the Trim `e` value spans **0 → 100** and the first matte vertex is the start
   cap (no trimming in from a non-zero start to mask a wrong start vertex). A 0→100 trim is
   necessary but not sufficient — confirm frame 1 grows from a point (no square-cap bloom);
-  `lc:1` + the cap-extended order is what guarantees that.
+  `lc:2` (round) + the cap-extended order is what guarantees that (the start disc blooms
+  over background and is clipped away).
 - **Artifacts:** `centerline.json` and the auto-emitted `centerline.svg` exist; a separate
   Lottie debug project is optional richer proof, not a substitute for the flat SVG.
 - **Main deliverable:** production scene completes the original-artwork preservation,
@@ -424,7 +453,15 @@ Before shipping a shape-following reveal from a filled mark, confirm:
 - Uniform scaling or offset-only resizing as the final method.
 - Oversized matte width as the only proof.
 - Animated stroke-width compensation for poor path placement.
-- Round caps/joins added by default (`lc:2` / `lj:2` on a sharp polygonal matte).
+- **Round joins** on a sharp polygonal matte (`lj:2`) — they round the *settled* mark
+  (the rounded-mask regression). Note this bans the *join*, not the *cap*: a round **cap**
+  (`lc:2`) on the reveal matte is **required** for sharp folds (it rounds only the moving
+  frontier, never the settled mark) — do not mislabel it as the regression. Filleting the
+  centerline driver to "fix" the corner notch is also wrong: it relocates the flat-cap step
+  rather than removing it, and pulls the matte outline back from the fill's sharp tip so the
+  track matte under-covers the corner — making the *settled* corners look rounded.
+- Shipping a sharp-fold reveal without inspecting the corner-crossing frames (a clean
+  settled frame is not proof the moving frontier is clean).
 - Declaring rail pairing "unreliable" because of unequal rail lengths or a
   fold-back, then using raster skeletonization (or uniform-resample-by-index, which
   is normalized-arclength correspondence in disguise).

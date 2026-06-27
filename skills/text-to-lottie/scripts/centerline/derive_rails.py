@@ -396,18 +396,46 @@ def balance_report(verts, railA, railB, samples_per_seg, ambig_thresh):
 
 # ---------- per-section width profile ----------
 def segment_widths(report, nseg):
-    """Mean local fill width (left+right) per centerline segment, from the
-    balance samples. Always segment-aligned and post-simplification, so it is
-    correct for both the polygonal and the normal-foot route (unlike the raw
-    method `section_widths`, whose length is method-dependent)."""
-    sums = [0.0] * nseg; cnts = [0] * nseg
+    """Local fill width per centerline segment, robust to convex corners.
+
+    Segment-aligned and post-simplification, so correct for both the polygonal
+    and the normal-foot route (unlike the raw method `section_widths`, whose
+    length is method-dependent). Two corrections vs. a naive mean of
+    `left+right`, both there to stop convex corners from inflating the matte:
+
+      - **Measure width as `2*min(left,right)`, not `left+right`.** At a
+        well-centered sample the two rails are equidistant and the measures
+        agree. At a skewed convex-corner sample the centerline sits far from one
+        rail, so `left+right` overstates the true ribbon width and would size the
+        matte to a phantom width. `2*min` keys off the near rail and never
+        overstates.
+      - **Drop `ambiguous` (high-imbalance == corner) samples from the mean.** A
+        segment's width should come from its straight run, not its corner. Fall
+        back to all of a segment's samples only if every one is ambiguous, and to
+        the global mean only if a segment has no samples at all.
+    """
+    def w(r):
+        return 2.0 * min(r["left"], r["right"])
+    sums = [0.0] * nseg; cnts = [0] * nseg          # non-ambiguous only
+    sums_all = [0.0] * nseg; cnts_all = [0] * nseg  # all samples (fallback)
     for r in report:
         k = r["seg"]
-        if 0 <= k < nseg:
-            sums[k] += r["width"]; cnts[k] += 1
-    allw = [r["width"] for r in report]
+        if not (0 <= k < nseg):
+            continue
+        sums_all[k] += w(r); cnts_all[k] += 1
+        if not r.get("ambiguous"):
+            sums[k] += w(r); cnts[k] += 1
+    allw = [w(r) for r in report]
     fallback = (sum(allw) / len(allw)) if allw else 0.0
-    return [(sums[k] / cnts[k]) if cnts[k] else fallback for k in range(nseg)]
+    out = []
+    for k in range(nseg):
+        if cnts[k]:
+            out.append(sums[k] / cnts[k])
+        elif cnts_all[k]:
+            out.append(sums_all[k] / cnts_all[k])
+        else:
+            out.append(fallback)
+    return out
 
 
 # ---------- containment pass (does the matte spill past / into another limb?) ----------
@@ -470,31 +498,65 @@ def _poly_d(pts):
     return "M" + " L".join(f"{x:.2f},{y:.2f}" for x, y in pts) + " Z"
 
 
-def write_coverage_svg(path, poly, railA, railB_rev, capA, capB, verts,
-                       matte_profile, single_width, single_mode, report,
-                       containment):
-    """Flat, dev-server-free proof of the matte footprint. Back to front:
-    filled contour, rails+caps, the matte stroked at its actual width (~30%),
-    the centerline, red bleed stretches, yellow ambiguous rings."""
-    pts_all = list(poly) + list(verts) + list(railA) + list(railB_rev)
+def write_coverage_svg(path, poly, railA, railB_rev, capA, capB, centerline_verts,
+                       matte_order, widths_ordered, single_width, single_mode,
+                       report, containment):
+    """Flat, dev-server-free, HONEST proof of the matte footprint.
+
+    The footprint is drawn exactly as production strokes it — the cap-extended
+    reveal order, BUTT caps (lc:1), miter joins clamped to the production limit
+    (ml:8) — then the fill is painted opaque white ON TOP so the only footprint
+    that survives is what pokes OUTSIDE the fill. So the eye sees just the spill,
+    coloured by what it means:
+      - amber  = matte over background (cosmetic; a track matte reveals nothing
+                 there),
+      - red    = matte reaching another limb's fill (a real defect),
+                 from containment_report.bleed_samples,
+      - yellow = convex-corner (ambiguous) balance samples.
+    A one-line legend prints the worst over-reach so the picture and the JSON
+    agree at a glance. This is what makes 'is it contained?' answerable by eye
+    instead of looking 2x the shape because of harmless overhang + miter spikes."""
+    pts_all = (list(poly) + list(centerline_verts) + list(matte_order)
+               + list(railA) + list(railB_rev))
     xs = [p[0] for p in pts_all]; ys = [p[1] for p in pts_all]
     minx, maxx = min(xs), max(xs); miny, maxy = min(ys), max(ys)
     w = (maxx - minx) or 1.0; h = (maxy - miny) or 1.0
     diag = math.hypot(w, h)
-    maxhw = max([single_width] + list(matte_profile)) / 2.0
-    pad = maxhw + diag * 0.02
+    maxhw = max([single_width] + list(widths_ordered)) / 2.0
+    pad = maxhw + diag * 0.06            # extra headroom for the legend + spikes
     vw = w + 2 * pad; vh = h + 2 * pad
     vb = f"{minx - pad:.2f} {miny - pad:.2f} {vw:.2f} {vh:.2f}"
     thin = max(diag * 0.0025, 0.4)
     bright = max(diag * 0.004, 0.5)
     ring = max(diag * 0.012, 1.0)
+    fs = max(diag * 0.030, 3.0)
+
+    def footprint(stroke, opacity, lc):
+        out = []
+        cap = {1: "butt", 2: "round", 3: "square"}[lc]
+        common = (f'fill="none" stroke="{stroke}" stroke-opacity="{opacity}" '
+                  f'stroke-linecap="{cap}" stroke-linejoin="miter" '
+                  f'stroke-miterlimit="8"')
+        if single_mode:
+            out.append(f'<polyline points="{_pl(matte_order)}" {common} '
+                       f'stroke-width="{single_width:.2f}"/>')
+        else:
+            for k in range(len(matte_order) - 1):
+                wseg = widths_ordered[min(k, len(widths_ordered) - 1)]
+                out.append(f'<polyline points="{_pl([matte_order[k], matte_order[k + 1]])}" '
+                           f'{common} stroke-width="{wseg:.2f}"/>')
+        return out
 
     p = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{vb}">']
     p.append(f'<rect x="{minx - pad:.2f}" y="{miny - pad:.2f}" '
              f'width="{vw:.2f}" height="{vh:.2f}" fill="#ffffff"/>')
-    # 1. filled contour (context)
-    p.append(f'<path d="{_poly_d(poly)}" fill="#000000" fill-opacity="0.12"/>')
-    # 2. rails + caps
+    # 1. matte footprint, production-accurate (butt caps, ml:8), in amber
+    p += footprint("#f5a623", "0.95", 1)
+    # 2. paint the fill opaque white ON TOP -> only the OUTSIDE-fill spill remains
+    p.append(f'<path d="{_poly_d(poly)}" fill="#ffffff"/>')
+    # 3. faint fill tint for context (over the white)
+    p.append(f'<path d="{_poly_d(poly)}" fill="#000000" fill-opacity="0.10"/>')
+    # 4. rails + caps
     p.append(f'<polyline points="{_pl(railA)}" fill="none" '
              f'stroke="#e8820c" stroke-width="{thin:.2f}"/>')
     p.append(f'<polyline points="{_pl(railB_rev)}" fill="none" '
@@ -503,22 +565,10 @@ def write_coverage_svg(path, poly, railA, railB_rev, capA, capB, verts,
         p.append(f'<line x1="{cap[0][0]:.2f}" y1="{cap[0][1]:.2f}" '
                  f'x2="{cap[1][0]:.2f}" y2="{cap[1][1]:.2f}" '
                  f'stroke="#11a911" stroke-width="{thin * 1.6:.2f}"/>')
-    # 3. matte footprint at the actual width (semi-transparent)
-    if single_mode:
-        p.append(f'<polyline points="{_pl(verts)}" fill="none" stroke="#1e7be0" '
-                 f'stroke-opacity="0.30" stroke-width="{single_width:.2f}" '
-                 f'stroke-linecap="square" stroke-linejoin="miter"/>')
-    else:
-        for k in range(len(verts) - 1):
-            wseg = matte_profile[min(k, len(matte_profile) - 1)]
-            p.append(f'<polyline points="{_pl([verts[k], verts[k + 1]])}" '
-                     f'fill="none" stroke="#1e7be0" stroke-opacity="0.30" '
-                     f'stroke-width="{wseg:.2f}" stroke-linecap="square" '
-                     f'stroke-linejoin="miter"/>')
-    # 4. centerline on top
-    p.append(f'<polyline points="{_pl(verts)}" fill="none" '
+    # 5. centerline (raw) on top
+    p.append(f'<polyline points="{_pl(centerline_verts)}" fill="none" '
              f'stroke="#00d0ff" stroke-width="{bright:.2f}"/>')
-    # 5. bleed stretches in red (cosmetic overhang is NOT painted)
+    # 6. cross-limb bleed in red (the only real defect)
     for b in containment["bleed_samples"]:
         ax, ay = b["at"]; qx, qy = b["point"]
         p.append(f'<line x1="{ax:.2f}" y1="{ay:.2f}" x2="{qx:.2f}" y2="{qy:.2f}" '
@@ -527,12 +577,25 @@ def write_coverage_svg(path, poly, railA, railB_rev, capA, capB, verts,
                  f'fill="#ff1a1a" fill-opacity="0.75"/>')
         p.append(f'<circle cx="{ax:.2f}" cy="{ay:.2f}" r="{ring * 0.5:.2f}" '
                  f'fill="#ff1a1a"/>')
-    # 6. ambiguous balance samples as yellow rings
+    # 7. ambiguous (convex-corner) balance samples as yellow rings
     for r in report:
         if r.get("ambiguous"):
             cx, cy = r["p"]
             p.append(f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{ring:.2f}" '
                      f'fill="none" stroke="#f2c400" stroke-width="{thin:.2f}"/>')
+    # 8. legend so the picture and the JSON reconcile
+    wc = containment["worst_case"]
+    nbleed = len(containment["bleed_samples"])
+    lx = minx - pad + diag * 0.01
+    ly = miny - pad + fs * 1.2
+    p.append(f'<text x="{lx:.2f}" y="{ly:.2f}" font-family="sans-serif" '
+             f'font-size="{fs:.2f}" fill="#222">'
+             f'worst over-reach {wc["over_reach"]} ({wc["kind"]}) | '
+             f'bleed {nbleed}</text>')
+    p.append(f'<text x="{lx:.2f}" y="{ly + fs * 1.25:.2f}" font-family="sans-serif" '
+             f'font-size="{fs * 0.85:.2f}" fill="#666">'
+             f'amber = over background (cosmetic) | red = cross-limb bleed (defect)'
+             f'</text>')
     p.append('</svg>')
     with open(path, "w") as f:
         f.write("\n".join(p))
@@ -671,6 +734,29 @@ def main():
     cap_B_pt = [round(v, 3) for v in mid(*capB)]
     # verts run capA -> capB; reverse if reveal should start from cap B
     matte_order = verts if start_is_A else verts[::-1]
+    # per-section matte widths in REVEAL order (matte_width_profile is centerline
+    # order V0..Vn; reverse it when the reveal starts from cap B)
+    widths_ordered = matte_width_profile if start_is_A else matte_width_profile[::-1]
+
+    # --- cap extension (pairs with a BUTT cap, lc:1, in production) ---
+    # A square cap (lc:3) projects half the stroke width past the start vertex the
+    # instant Trim leaves 0, so the reveal "pops" a full-width blob at frame 1
+    # instead of growing from a point. A butt cap removes that projection, but
+    # would then leave a half-width of fill UNrevealed at each cap. So push the two
+    # terminal vertices outward along their own segment by half the local matte
+    # width: the flat butt end then lands on the true cap edge — clean point-start,
+    # full finish. This is geometry, NOT a trim change (the trim still runs 0->100).
+    def _extend_caps(order, w_ord):
+        v = [list(p) for p in order]
+        if len(v) >= 2:
+            for end, nb, wi in ((0, 1, w_ord[0]), (-1, -2, w_ord[-1])):
+                dx = v[end][0] - v[nb][0]; dy = v[end][1] - v[nb][1]
+                L = math.hypot(dx, dy) or 1.0
+                h = wi / 2.0
+                v[end] = [round(v[end][0] + dx / L * h, 3),
+                          round(v[end][1] + dy / L * h, 3)]
+        return v
+    matte_order_capext = _extend_caps(matte_order, widths_ordered)
 
     d_out = "M" + " L".join(f"{x},{y}" for (x, y) in verts)
     out = {
@@ -694,16 +780,31 @@ def main():
             "start_cap": args.start_cap,
             "start_point": cap_A_pt if start_is_A else cap_B_pt,
             "end_point": cap_B_pt if start_is_A else cap_A_pt,
-            "matte_vertex_order": [list(p) for p in matte_order],
+            "matte_vertex_order": [list(p) for p in matte_order_capext],
+            "matte_vertex_order_raw": [list(p) for p in matte_order],
+            "matte_linecap": 1,
+            "cap_extension": {
+                "start_halfwidth": round(widths_ordered[0] / 2.0, 3),
+                "end_halfwidth": round(widths_ordered[-1] / 2.0, 3),
+                "note": ("matte_vertex_order is already cap-extended; build the "
+                         "production stroke from it with lc:1 (butt). The raw "
+                         "(un-extended) route is matte_vertex_order_raw."),
+            },
             "reveal_span": [0, 100],
             "note": ("Trim Paths reveals in matte_vertex_order; the production "
                      "matte polyline must use this order so the reveal starts at "
-                     "start_cap."),
+                     "start_cap. Stroke it with lc:1 (butt) — the order is already "
+                     "extended half a width past each cap so a butt end still "
+                     "covers the full cap."),
             "trim_note": ("The production Trim Paths `e` keyframe value MUST run "
                           "0->100 and the first matte vertex MUST be the true "
                           "start cap. Never trim in from 10/20 to hide a bad first "
-                          "frame — a trim that starts mid-value is a tell that the "
-                          "start vertex is wrong; fix the vertex, not the trim."),
+                          "frame. NOTE: a 0->100 trim is necessary but NOT "
+                          "sufficient — a square cap (lc:3) blooms a full-width "
+                          "blob at the first nonzero frame even when the trim "
+                          "starts at 0, which reads as 'reveal starts at ~5-10%'. "
+                          "Use lc:1 (butt) with the cap-extended order above so "
+                          "the reveal grows from a point."),
         },
     }
     with open(args.out, "w") as f:
@@ -712,8 +813,8 @@ def main():
     svg_path = os.path.join(os.path.dirname(os.path.abspath(args.out)),
                             "centerline.svg")
     write_coverage_svg(svg_path, poly, railA, railB_rev, capA, capB, verts,
-                       matte_width_profile, recommended_matte_width, single_mode,
-                       report, containment)
+                       matte_order_capext, widths_ordered, recommended_matte_width,
+                       single_mode, report, containment)
 
     print(f"\nmethod: {method}")
     print(f"centerline vertices: {len(verts)}")

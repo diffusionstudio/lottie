@@ -24,7 +24,7 @@ pairing** — not a raster skeleton, not a guessed route.
    - `route_decision.matte_vertex_order` → the matte polyline (`c:false`),
    - if `width_decision` is `single-width` → `recommended_matte_width` (one fixed stroke);
      if `per-section` → `matte_width_profile[i]` per section (one open sub-path each),
-   - set `lc:3, lj:1, ml:8` for sharp marks,
+   - set `lc:1` (butt), `lj:1`, `ml:8` for sharp marks; the route is cap-extended so a butt end still covers each cap (avoids the frame-1 square-cap bloom),
    - assert the Trim `e` value runs **0 → 100** with the first vertex at the start cap.
    If `centerline.svg` shows red bleed or heavy spill, switch to the per-section matte or
    reconsider the route — do not widen and hope.

@@ -18,7 +18,7 @@ Two layers: a matte driver (`td:1`) and the original filled mark (`tt:1`).
   "shapes": [{ "ty": "gr", "nm": "matte", "it": [
     { "ty": "sh", "nm": "centerline", "ks": { "a": 0, "k": {
         "i": [[0,0], ...], "o": [[0,0], ...],
-        "v": [ /* route_decision.matte_vertex_order from centerline.json */ ],
+        "v": [ /* route_decision.matte_vertex_order — already cap-extended */ ],
         "c": false                          // OPEN polyline, never closed
     }}},
     { "ty": "tm", "nm": "trim",             // Trim Paths = the reveal
@@ -32,7 +32,7 @@ Two layers: a matte driver (`td:1`) and the original filled mark (`tt:1`).
       "c": { "a": 0, "k": [1,1,1,1] },       // white; hidden, color irrelevant
       "o": { "a": 0, "k": 100 },
       "w": { "a": 0, "k": 18.9 },            // recommended_matte_width — FIXED ("a":0)
-      "lc": 3,                               // SQUARE cap (1=butt 2=round 3=square)
+      "lc": 1,                               // BUTT cap (1=butt 2=round 3=square)
       "lj": 1,                               // MITER join (1=miter 2=round 3=bevel)
       "ml": 8 },                             // generous miter limit
     { "ty": "tr" /* identity */ }
@@ -52,18 +52,30 @@ Two layers: a matte driver (`td:1`) and the original filled mark (`tt:1`).
 ```
 
 Hard rules (these are what the regression got wrong):
-- **`lc:3, lj:1, ml:8`** for sharp polygonal marks. **Never `lc:2`/`lj:2`** (round) by
-  default. Use round only if the source geometry is genuinely round.
+- **`lc:1` (butt cap), `lj:1`, `ml:8`** for sharp polygonal marks. **Never `lc:2`/`lj:2`**
+  (round) by default — round caps/joins are the rounded-mask regression. Use round only if
+  the source geometry is genuinely round.
+- **Why butt, not square.** Start and end caps have *opposite* needs and `lc` is one global
+  property. A square cap (`lc:3`) projects half the stroke width past the start vertex the
+  instant Trim leaves 0, so the reveal pops a full-width blob at frame 1 — it reads as
+  "starting at ~5–10%," not growing from a point. A butt cap removes that projection but
+  would leave a half-width of fill unrevealed at *each* cap. The solver resolves this:
+  `route_decision.matte_vertex_order` is **already extended** outward by half the local
+  width at both ends (`route_decision.cap_extension`), so a butt end lands on the true cap
+  edge — clean point-start *and* full finish. Use the extended order as-is with `lc:1`.
 - **Stroke width is fixed** (`"w": {"a":0, ...}`) at `recommended_matte_width`. Never
   animate width to fix coverage, never bloom the endpoint.
-- Matte polyline uses **`route_decision.matte_vertex_order`** so the reveal starts at the
-  intended cap. It is **open** (`c:false`).
+- Matte polyline uses **`route_decision.matte_vertex_order`** (the cap-extended one) so the
+  reveal starts at the intended cap and grows from a point. It is **open** (`c:false`).
 - Driver coordinates stay in the **source viewBox space** so they register with the fill.
 - **Trim `e` value runs `[0] → [100]`** (assert the keyframes below), and the first vertex
   of `matte_vertex_order` is the start cap. **Do not start the trim above 0.** A trim that
   starts mid-value (10/20) to hide a bad first frame is a tell that the start vertex is
-  wrong — fix the vertex, not the trim. The block above is correct: `s:{a:0,k:0}` and the
-  `e` keyframes are `s:[0]` → `s:[100]`.
+  wrong — fix the vertex, not the trim. **But note: a 0→100 trim is necessary, not
+  sufficient.** It proves the *trim* is right; it cannot see cap geometry. A square cap
+  blooms at frame 1 even with a perfect 0→100 trim — that is why `lc:1` + the cap-extended
+  order matters. The block above is correct: `s:{a:0,k:0}` and `e` keyframes `s:[0]` →
+  `s:[100]`, stroked with `lc:1`.
 
 ## Single-width vs per-section: read `width_decision`
 
@@ -98,7 +110,8 @@ same caveat as the curved/normal-foot branch.
         "c": false }}},
     { "ty": "st", "c": {"a":0,"k":[1,1,1,1]}, "o": {"a":0,"k":100},
       "w": { "a": 0, "k": /* matte_width_profile[0] */ 17.08 },  // per-section, FIXED
-      "lc": 3, "lj": 1, "ml": 8 },
+      "lc": 1, "lj": 1, "ml": 8 },          // butt; the first/last section uses the
+                                            // cap-extended endpoint so butt still covers
     { "ty": "tr" }
   ]},
   // ... sec-1, sec-2, each at matte_width_profile[i] ...
@@ -113,10 +126,14 @@ same caveat as the curved/normal-foot branch.
 ]}
 ```
 
-**Terminal-cap rule.** `lc:3` (square) at an isolated tip guarantees full reveal but
-overshoots; use `lc:1` (butt) at a tip when a neighbouring limb is within half a stroke
-width, since a square cap there is exactly what causes cross-limb bleed (see
-`containment_report.bleed_samples`). `lj:1` (miter) stays the join default regardless.
+**Terminal-cap rule.** Default to `lc:1` (butt) with the cap-extended
+`matte_vertex_order`: it reveals from a point (no frame-1 bloom) and still covers each cap
+because the endpoint was pushed out by half a width. Square (`lc:3`) is what the regression
+used to "guarantee full reveal," but it both blooms at the start and, at a tip within half
+a stroke width of a neighbouring limb, drives the stroke into that limb — cross-limb bleed
+(see `containment_report.bleed_samples`). Butt + extension avoids both. `lj:1` (miter)
+stays the join default regardless; if a convex corner points at a nearby limb and the
+honest `centerline.svg` shows red there, bevel that one join (`lj:3`) rather than widening.
 
 ## Debug scene (OPTIONAL — the required flat proof is `centerline.svg`)
 

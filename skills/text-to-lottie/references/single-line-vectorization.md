@@ -294,10 +294,14 @@ These find a center skeleton, but they are a **fallback, not the main move**.
   ε** so the matte stays continuous (a step at the join can flash a gap during the reveal).
   All sub-paths share **one coordinated Trim** so the reveal reads as a single frontier
   (see `scripts/centerline/build_matte_snippet.md`).
-- **Sharp polygonal marks → exact Lottie values: `"lc": 3` (square cap), `"lj": 1`
+- **Sharp polygonal marks → exact Lottie values: `"lc": 1` (butt cap), `"lj": 1`
   (miter join), `"ml": 8`.** Never `"lc": 2` / `"lj": 2` (round) by default — round
   caps/joins are the rounded-mask regression. Use round only when the source
-  geometry is genuinely round. (`lc`: 1=butt, 2=round, 3=square; `lj`: 1=miter,
+  geometry is genuinely round. **Butt, not square:** a square cap (`lc:3`) projects half
+  the width past the start vertex the moment Trim leaves 0, blooming a full-width blob at
+  frame 1 (reads as "reveal starts at ~5–10%"). The solver emits a **cap-extended**
+  `matte_vertex_order` (pushed out half a width at each end), so a butt cap reveals from a
+  point yet still covers each cap fully. (`lc`: 1=butt, 2=round, 3=square; `lj`: 1=miter,
   2=round, 3=bevel.)
 - Keep driver coordinates in the **source viewBox/coordinate space** so the matte
   registers with the fill; do not rescale the centerline independently of the fill.
@@ -378,14 +382,18 @@ Before shipping a shape-following reveal from a filled mark, confirm:
   corners are flagged `ambiguous`.
 - **Route:** `route_decision` (start cap + vertex order) is recorded and matches the
   rendered reveal direction.
-- **Matte stroke:** `lc:3, lj:1, ml:8` for sharp marks (never `lc:2`/`lj:2`); width
+- **Matte stroke:** `lc:1` (butt) + cap-extended `matte_vertex_order`, `lj:1, ml:8` for
+  sharp marks (never `lc:2`/`lj:2`, and not `lc:3` — square blooms at frame 1); width
   fixed (`"a":0`), no width keyframes; coords in the source viewBox space.
 - **Width decision:** `width_spread` reported and the width decision recorded —
   single fixed width vs per-section `matte_width_profile`.
-- **Containment:** `centerline.svg` exists and shows **no red** (no cross-limb bleed);
-  `containment_report.bleed_samples` is empty.
+- **Containment:** `centerline.svg` exists and shows **no red** (no cross-limb bleed) —
+  amber spill over background is cosmetic; the legend's `worst over-reach`/`bleed` agree
+  with `containment_report` (`bleed_samples` empty).
 - **Trim:** the Trim `e` value spans **0 → 100** and the first matte vertex is the start
-  cap (no trimming in from a non-zero start to mask a wrong start vertex).
+  cap (no trimming in from a non-zero start to mask a wrong start vertex). A 0→100 trim is
+  necessary but not sufficient — confirm frame 1 grows from a point (no square-cap bloom);
+  `lc:1` + the cap-extended order is what guarantees that.
 - **Artifacts:** `centerline.json` and the auto-emitted `centerline.svg` exist; a separate
   Lottie debug project is optional richer proof, not a substitute for the flat SVG.
 - **Main deliverable:** production scene completes the original-artwork preservation,

@@ -192,8 +192,12 @@ sandbox and adapt it rather than re-deriving by hand:
      before trusting it.
 4. Refit as a clean path (see Path Cleanup And Refitting), preserving sharp corners
    where the source is angular.
-5. Choose matte stroke width from the measured rail distance
-   (`recommended_matte_width`), not by guessing.
+5. Choose the **per-section width profile** (`matte_width_profile`: each section's local
+   width + ε, where ε is a small fraction of the median section width), not by guessing.
+   Collapse to one fixed width (`recommended_matte_width`) **only** when `width_spread` is
+   below the gate and the containment pass shows no bleed. Never size to the global max and
+   rely on it covering the narrow sections — that is what spills past the fill and bleeds
+   across folds.
 6. **Record a route decision** (`route_decision`): which cap the reveal starts from
    and the resulting vertex order, since Trim-Paths direction depends on it.
 
@@ -232,13 +236,17 @@ file artifacts, not a belief or a prose intent. Produce:
 - a copy of the source SVG (or a normalized SVG) kept inside it,
 - a derivation script (the adapted `derive_rails.py`),
 - `centerline.json` as output — including `method` (which branch ran),
+  `matte_width_profile` + `width_spread` + `width_decision`, `containment_report`,
   `recommended_matte_width`, `balance_report`, and `route_decision`,
-- a debug overlay SVG **or** Lottie scene showing: the original filled mark at low
-  opacity, the outer rail, the inner rail, the paired rail segments, the midpoint
-  samples, the derived driver route, and optional normal guides / equal-distance
-  checks,
-- a separate debug scene/project when useful, e.g.
-  `public/projects/<slug>-centerline-debug/scene-1/lottie.json`.
+- **`centerline.svg` always** — the solver auto-emits this flat coverage overlay on every
+  run (filled contour, outer/inner rails, caps, the matte footprint stroked at its actual
+  width, the derived route, red bleed stretches, yellow ambiguous rings). It is the
+  **required** human-verification artifact: it opens in any editor's SVG preview with **no
+  dev server** and answers "is it centered," "does it spill," and "is the spill harmless"
+  at a glance,
+- a Lottie debug *scene* is **optional** richer proof, e.g.
+  `public/projects/<slug>-centerline-debug/scene-1/lottie.json` — never a substitute for
+  the flat `centerline.svg`.
 
 Then carry the **approved driver route** into the production Lottie, where the
 original filled mark stays the visible artwork. Keep the sandbox small and
@@ -274,9 +282,18 @@ These find a center skeleton, but they are a **fallback, not the main move**.
 ## Matte Stroke Rules
 
 - A matte stroke is a hidden technical mask, not a visible design stroke.
-- Use a stable stroke width, fixed (`"w": {"a": 0, ...}`) at the measured
-  `recommended_matte_width`. Do not animate stroke width to compensate for poor
-  centerline placement.
+- Use a stable stroke width, fixed (`"w": {"a": 0, ...}`). **No time-varying width** in any
+  case. A single fixed width (`recommended_matte_width`) is valid **only** when the
+  containment pass shows no bleed and overhang is cosmetic (`width_spread` below the gate).
+  A static **per-section width profile** (`matte_width_profile`, one fixed width per
+  section) is allowed and **required when `width_spread` exceeds the gate** — it is a
+  fitting, not an animation. Do not animate stroke width to compensate for poor centerline
+  placement, and oversized width is never a substitute for a correct route.
+- **Per-section matte build:** a per-section matte is one open stroked sub-path per
+  section, each at its `matte_width_profile` width, with section boundaries **overlapped by
+  ε** so the matte stays continuous (a step at the join can flash a gap during the reveal).
+  All sub-paths share **one coordinated Trim** so the reveal reads as a single frontier
+  (see `scripts/centerline/build_matte_snippet.md`).
 - **Sharp polygonal marks → exact Lottie values: `"lc": 3` (square cap), `"lj": 1`
   (miter join), `"ml": 8`.** Never `"lc": 2` / `"lj": 2` (round) by default — round
   caps/joins are the rounded-mask regression. Use round only when the source
@@ -303,8 +320,10 @@ stroke path you reuse directly). It is **mandatory** for:
 - any case where an authored route would otherwise be tempting.
 
 When mandatory, the overlay is the proof the derived route is centered — produce
-it as part of the geometry sandbox. Create it in a *separate* debug scene or
-debug section containing:
+it as part of the geometry sandbox. The required artifact is the flat
+**`centerline.svg`**, which the solver auto-emits on every run and which opens in any
+editor's SVG preview with **no dev server**. A Lottie debug scene is optional richer
+proof, never a substitute for the flat file. Whichever you view, it must contain:
 
 - original fill at low opacity,
 - original contours,
@@ -361,8 +380,14 @@ Before shipping a shape-following reveal from a filled mark, confirm:
   rendered reveal direction.
 - **Matte stroke:** `lc:3, lj:1, ml:8` for sharp marks (never `lc:2`/`lj:2`); width
   fixed (`"a":0`), no width keyframes; coords in the source viewBox space.
-- **Artifacts:** `centerline.json` exists and a *separate* debug project renders
-  rails + normal guides + ambiguous markers.
+- **Width decision:** `width_spread` reported and the width decision recorded —
+  single fixed width vs per-section `matte_width_profile`.
+- **Containment:** `centerline.svg` exists and shows **no red** (no cross-limb bleed);
+  `containment_report.bleed_samples` is empty.
+- **Trim:** the Trim `e` value spans **0 → 100** and the first matte vertex is the start
+  cap (no trimming in from a non-zero start to mask a wrong start vertex).
+- **Artifacts:** `centerline.json` and the auto-emitted `centerline.svg` exist; a separate
+  Lottie debug project is optional richer proof, not a substitute for the flat SVG.
 - **Main deliverable:** production scene completes the original-artwork preservation,
   wordmark/logo fidelity, composition, timing, and export/player validation — and
   the geometry pass was time-boxed.
@@ -399,6 +424,10 @@ Before shipping a shape-following reveal from a filled mark, confirm:
 - Unnecessary extra SVG points.
 - Endpoint bloom as the main reveal solution.
 - Forcing one path where geometry needs several.
+- Sizing the matte to the global max width and accepting sideways spill without a
+  containment check.
+- Trimming the reveal in from a non-zero start value to mask a wrong start vertex.
+- Routing debug proof only through a Lottie scene with no flat `centerline.svg`.
 - Using an authored or visually designed spine for a rail-clear ribbon mark
   without first attempting paired-rail midpointing and documenting why it failed
   (attempted pairing, ambiguous/unavailable segment, why midpointing is

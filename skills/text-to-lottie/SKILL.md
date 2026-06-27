@@ -74,8 +74,8 @@ kinetic title with glass sweep uses typography plus visual effects.
    writing the production scene: copy and adapt the bundled
    `skills/text-to-lottie/scripts/centerline/derive_rails.py` (rail pairing — do not
    reach for raster skeletonization first), read its balance report and
-   `route_decision`, and build a separate debug overlay to prove the route is
-   centered.
+   `route_decision`, and open the auto-emitted `centerline.svg` to verify the route (no
+   dev server needed).
 5. Validate JSON, run or reuse the dev server, inspect exact frames with
    `?frame=N`, and fix render/design/motion issues before finishing.
 

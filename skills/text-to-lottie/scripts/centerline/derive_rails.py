@@ -5,8 +5,10 @@ CONTOUR RAIL PAIRING (no raster skeleton). Standard library only.
 
 This is the bundled reference solver for `single-line-vectorization.md`. Copy it
 into a per-project sandbox (`scripts/<slug>-centerline/`), point it at the mark's
-filled subpath, run it, read the balance report, then carry `centerline_d` +
-`recommended_matte_width` + `route_decision` into the production matte (see
+filled subpath, run it, open the auto-emitted `centerline.svg` to verify (no dev
+server), read the balance + containment reports, then carry `centerline_d` +
+`route_decision` + the width decision (single `recommended_matte_width`, or the
+per-section `matte_width_profile`) into the production matte (see
 `build_matte_snippet.md`).
 
 Why rail pairing and not a raster skeleton:
@@ -45,6 +47,12 @@ Usage:
   python derive_rails.py path.txt                   # file holding one `d` string
   options: --out centerline.json  --corner-deg 25  --cap-anti -0.6
            --start-cap A|B  --samples 2
+           --margin-frac 0.04  --spread-gate 1.6  --adjacency-frac 0.15
+
+Every run also writes `centerline.svg` next to the JSON: a flat coverage overlay
+(filled contour, rails+caps, the matte footprint stroked at its actual width,
+the centerline, red bleed stretches, yellow ambiguous rings) that opens in any
+editor's SVG preview with no dev server — the required human-verification artifact.
 """
 import argparse
 import json
@@ -213,6 +221,55 @@ def turn_angle_deg(a, b, c):
     return math.degrees(math.acos(max(-1.0, min(1.0, dot(d1, d2)))))
 
 
+def median(xs):
+    s = sorted(xs)
+    n = len(s)
+    if n == 0:
+        return 0.0
+    m = n // 2
+    return s[m] if n % 2 else (s[m - 1] + s[m]) / 2.0
+
+
+def point_in_poly(pt, poly):
+    """Ray-cast point-in-polygon test against a closed contour `poly`."""
+    x, y = pt
+    inside = False
+    n = len(poly)
+    j = n - 1
+    for i in range(n):
+        xi, yi = poly[i]; xj, yj = poly[j]
+        if (yi > y) != (yj > y):
+            xc = (xj - xi) * (y - yi) / ((yj - yi) or 1e-12) + xi
+            if x < xc:
+                inside = not inside
+        j = i
+    return inside
+
+
+def polyline_cumlen(poly):
+    """Cumulative arc length at each vertex, plus total (>=1 to avoid /0)."""
+    cum = [0.0]
+    for k in range(len(poly) - 1):
+        cum.append(cum[-1] + length(sub(poly[k + 1], poly[k])))
+    total = cum[-1] if cum[-1] > 1e-9 else 1.0
+    return cum, total
+
+
+def nearest_param(p, poly, cum, total):
+    """Nearest point on polyline `poly` to `p`: (dist, foot, normalized_arclen)."""
+    best = (1e18, poly[0], 0.0)
+    for k in range(len(poly) - 1):
+        a, b = poly[k], poly[k + 1]
+        ab = sub(b, a); L2 = dot(ab, ab)
+        t = 0.0 if L2 == 0 else max(0.0, min(1.0, dot(sub(p, a), ab) / L2))
+        foot = add(a, mul(ab, t))
+        dd = length(sub(p, foot))
+        if dd < best[0]:
+            s = cum[k] + t * length(ab)
+            best = (dd, foot, s / total)
+    return best
+
+
 # ---------- cap detection / rail split ----------
 def detect_caps(poly, anti_thresh):
     """Return sorted [i, j] cap edge indices, plus all U-turn candidates."""
@@ -320,20 +377,165 @@ def balance_report(verts, railA, railB, samples_per_seg, ambig_thresh):
         a, b = verts[k], verts[k + 1]
         steps = max(1, samples_per_seg)
         for s in range(steps):
-            samples.append(add(a, mul(sub(b, a), s / steps)))
-    samples.append(verts[-1])
+            samples.append((k, add(a, mul(sub(b, a), s / steps))))
+    samples.append((max(0, len(verts) - 2), verts[-1]))
     report = []; max_imb = 0.0
-    for s in samples:
+    for seg, s in samples:
         dl, fl = point_polyline_nearest(s, railA)
         dr, fr = point_polyline_nearest(s, railB)
         imb = abs(dl - dr); max_imb = max(max_imb, imb)
-        report.append({"p": [round(s[0], 2), round(s[1], 2)],
+        report.append({"seg": seg,
+                       "p": [round(s[0], 2), round(s[1], 2)],
                        "left": round(dl, 2), "right": round(dr, 2),
                        "imbalance": round(imb, 2), "width": round(dl + dr, 2),
                        "left_foot": [round(fl[0], 2), round(fl[1], 2)],
                        "right_foot": [round(fr[0], 2), round(fr[1], 2)],
                        "ambiguous": imb > ambig_thresh})
     return report, max_imb
+
+
+# ---------- per-section width profile ----------
+def segment_widths(report, nseg):
+    """Mean local fill width (left+right) per centerline segment, from the
+    balance samples. Always segment-aligned and post-simplification, so it is
+    correct for both the polygonal and the normal-foot route (unlike the raw
+    method `section_widths`, whose length is method-dependent)."""
+    sums = [0.0] * nseg; cnts = [0] * nseg
+    for r in report:
+        k = r["seg"]
+        if 0 <= k < nseg:
+            sums[k] += r["width"]; cnts[k] += 1
+    allw = [r["width"] for r in report]
+    fallback = (sum(allw) / len(allw)) if allw else 0.0
+    return [(sums[k] / cnts[k]) if cnts[k] else fallback for k in range(nseg)]
+
+
+# ---------- containment pass (does the matte spill past / into another limb?) ----------
+def containment_pass(report, verts, poly, matte_profile, single_width,
+                     single_mode, margin, adjacency_frac):
+    """For each balance sample, with the matte half-width that section will
+    actually use, test whether the stroke stays inside the fill (inside),
+    pokes out over background (overhang, cosmetic), or reaches a non-adjacent
+    centerline parameter's fill — a different limb (bleed, a real defect)."""
+    cum, total = polyline_cumlen(verts)
+    bleed = []
+    overhang = 0
+    worst = {"over_reach": 0.0, "kind": "inside", "param": 0.0}
+    for r in report:
+        p = (r["p"][0], r["p"][1])
+        seg = r["seg"]
+        if single_mode:
+            half = single_width / 2.0
+        else:
+            half = matte_profile[min(seg, len(matte_profile) - 1)] / 2.0
+        _, _, s_p = nearest_param(p, verts, cum, total)
+        for dist_key, foot_key in (("left", "left_foot"), ("right", "right_foot")):
+            side_dist = r[dist_key]
+            over = half - side_dist
+            if over <= margin:                     # stroke stays inside the fill
+                continue
+            foot = (r[foot_key][0], r[foot_key][1])
+            outward = norm(sub(foot, p))           # toward the rail, then past it
+            q = add(p, mul(outward, half))
+            if not point_in_poly(q, poly):
+                kind = "overhang"                  # over-reach lands on background
+                overhang += 1
+            else:
+                _, _, s_q = nearest_param(q, verts, cum, total)
+                if abs(s_q - s_p) > adjacency_frac:
+                    kind = "bleed"                 # reached a different limb's fill
+                    bleed.append({
+                        "param": round(s_p, 3),
+                        "offending_param": round(s_q, 3),
+                        "overlap": round(over, 2),
+                        "at": [round(p[0], 2), round(p[1], 2)],
+                        "point": [round(q[0], 2), round(q[1], 2)],
+                    })
+                else:
+                    kind = "overhang"              # same limb, fill simply wider here
+                    overhang += 1
+            if over > worst["over_reach"]:
+                worst = {"over_reach": round(over, 2), "kind": kind,
+                         "param": round(s_p, 3)}
+    return {"worst_case": worst, "bleed_samples": bleed,
+            "overhang_samples_count": overhang}
+
+
+# ---------- flat coverage overlay ----------
+def _pl(pts):
+    return " ".join(f"{x:.2f},{y:.2f}" for x, y in pts)
+
+
+def _poly_d(pts):
+    return "M" + " L".join(f"{x:.2f},{y:.2f}" for x, y in pts) + " Z"
+
+
+def write_coverage_svg(path, poly, railA, railB_rev, capA, capB, verts,
+                       matte_profile, single_width, single_mode, report,
+                       containment):
+    """Flat, dev-server-free proof of the matte footprint. Back to front:
+    filled contour, rails+caps, the matte stroked at its actual width (~30%),
+    the centerline, red bleed stretches, yellow ambiguous rings."""
+    pts_all = list(poly) + list(verts) + list(railA) + list(railB_rev)
+    xs = [p[0] for p in pts_all]; ys = [p[1] for p in pts_all]
+    minx, maxx = min(xs), max(xs); miny, maxy = min(ys), max(ys)
+    w = (maxx - minx) or 1.0; h = (maxy - miny) or 1.0
+    diag = math.hypot(w, h)
+    maxhw = max([single_width] + list(matte_profile)) / 2.0
+    pad = maxhw + diag * 0.02
+    vw = w + 2 * pad; vh = h + 2 * pad
+    vb = f"{minx - pad:.2f} {miny - pad:.2f} {vw:.2f} {vh:.2f}"
+    thin = max(diag * 0.0025, 0.4)
+    bright = max(diag * 0.004, 0.5)
+    ring = max(diag * 0.012, 1.0)
+
+    p = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{vb}">']
+    p.append(f'<rect x="{minx - pad:.2f}" y="{miny - pad:.2f}" '
+             f'width="{vw:.2f}" height="{vh:.2f}" fill="#ffffff"/>')
+    # 1. filled contour (context)
+    p.append(f'<path d="{_poly_d(poly)}" fill="#000000" fill-opacity="0.12"/>')
+    # 2. rails + caps
+    p.append(f'<polyline points="{_pl(railA)}" fill="none" '
+             f'stroke="#e8820c" stroke-width="{thin:.2f}"/>')
+    p.append(f'<polyline points="{_pl(railB_rev)}" fill="none" '
+             f'stroke="#7a3cc0" stroke-width="{thin:.2f}"/>')
+    for cap in (capA, capB):
+        p.append(f'<line x1="{cap[0][0]:.2f}" y1="{cap[0][1]:.2f}" '
+                 f'x2="{cap[1][0]:.2f}" y2="{cap[1][1]:.2f}" '
+                 f'stroke="#11a911" stroke-width="{thin * 1.6:.2f}"/>')
+    # 3. matte footprint at the actual width (semi-transparent)
+    if single_mode:
+        p.append(f'<polyline points="{_pl(verts)}" fill="none" stroke="#1e7be0" '
+                 f'stroke-opacity="0.30" stroke-width="{single_width:.2f}" '
+                 f'stroke-linecap="square" stroke-linejoin="miter"/>')
+    else:
+        for k in range(len(verts) - 1):
+            wseg = matte_profile[min(k, len(matte_profile) - 1)]
+            p.append(f'<polyline points="{_pl([verts[k], verts[k + 1]])}" '
+                     f'fill="none" stroke="#1e7be0" stroke-opacity="0.30" '
+                     f'stroke-width="{wseg:.2f}" stroke-linecap="square" '
+                     f'stroke-linejoin="miter"/>')
+    # 4. centerline on top
+    p.append(f'<polyline points="{_pl(verts)}" fill="none" '
+             f'stroke="#00d0ff" stroke-width="{bright:.2f}"/>')
+    # 5. bleed stretches in red (cosmetic overhang is NOT painted)
+    for b in containment["bleed_samples"]:
+        ax, ay = b["at"]; qx, qy = b["point"]
+        p.append(f'<line x1="{ax:.2f}" y1="{ay:.2f}" x2="{qx:.2f}" y2="{qy:.2f}" '
+                 f'stroke="#ff1a1a" stroke-width="{thin * 1.4:.2f}"/>')
+        p.append(f'<circle cx="{qx:.2f}" cy="{qy:.2f}" r="{ring * 0.7:.2f}" '
+                 f'fill="#ff1a1a" fill-opacity="0.75"/>')
+        p.append(f'<circle cx="{ax:.2f}" cy="{ay:.2f}" r="{ring * 0.5:.2f}" '
+                 f'fill="#ff1a1a"/>')
+    # 6. ambiguous balance samples as yellow rings
+    for r in report:
+        if r.get("ambiguous"):
+            cx, cy = r["p"]
+            p.append(f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{ring:.2f}" '
+                     f'fill="none" stroke="#f2c400" stroke-width="{thin:.2f}"/>')
+    p.append('</svg>')
+    with open(path, "w") as f:
+        f.write("\n".join(p))
 
 
 # ---------- input loading ----------
@@ -379,6 +581,14 @@ def main():
                     help="which cap the reveal starts from (drives Trim direction)")
     ap.add_argument("--samples", type=int, default=2,
                     help="balance/curve samples per centerline segment")
+    ap.add_argument("--margin-frac", type=float, default=0.04, dest="margin_frac",
+                    help="ε / matte margin as a fraction of the median section width")
+    ap.add_argument("--spread-gate", type=float, default=1.6, dest="spread_gate",
+                    help="width_spread at/above this recommends a per-section matte")
+    ap.add_argument("--adjacency-frac", type=float, default=0.15,
+                    dest="adjacency_frac",
+                    help="centerline param gap (0..1) beyond which over-reach into "
+                         "fill counts as cross-limb bleed, not same-limb overhang")
     args = ap.parse_args()
 
     d = load_d(args)
@@ -404,8 +614,10 @@ def main():
     railA = arc(poly, c0 + 1, c1)
     railB = arc(poly, c1 + 1, c0)
     railB_rev = railB[::-1]
-    capA = (poly[c0], poly[c0 + 1])
-    capB = (poly[c1], poly[c1 + 1])
+    # wrap the cap-edge endpoint like arc() does, so a cap on the closing edge
+    # (c == n-1) doesn't index past the contour.
+    capA = (poly[c0], poly[(c0 + 1) % n])
+    capB = (poly[c1], poly[(c1 + 1) % n])
     print(f"railA ({len(railA)}) / railB ({len(railB)})")
 
     fracA = sharp_corner_fraction(railA, args.corner_deg)
@@ -429,6 +641,30 @@ def main():
     verts = [(round(x, 3), round(y, 3)) for (x, y) in verts]
     report, max_imb = balance_report(verts, railA, railB, args.samples, 3.0)
 
+    # ---- per-section width profile + spread (the spread fix) ----
+    nseg = max(1, len(verts) - 1)
+    seg_w = segment_widths(report, nseg)
+    margin = args.margin_frac * (median(seg_w) or 1.0)
+    matte_width_profile = [round(wv + 2 * margin, 2) for wv in seg_w]
+    recommended_matte_width = round(max(matte_width_profile), 1) if matte_width_profile else 0.0
+    minw = max(min(seg_w), 1e-6) if seg_w else 1.0
+    width_spread = round((max(seg_w) if seg_w else 0.0) / minw, 2)
+    single_mode = width_spread < args.spread_gate
+    width_decision = "single-width" if single_mode else "per-section"
+    print(f"width_spread: {width_spread}  -> recommend {width_decision} matte "
+          f"(gate {args.spread_gate}); margin(ε)={round(margin, 2)}")
+
+    # ---- containment pass (turn "exceeds" into a computed signal) ----
+    containment = containment_pass(report, verts, poly, matte_width_profile,
+                                   recommended_matte_width, single_mode, margin,
+                                   args.adjacency_frac)
+    if containment["bleed_samples"]:
+        params = [b["param"] for b in containment["bleed_samples"]]
+        print(f"WARNING: {len(containment['bleed_samples'])} cross-limb bleed "
+              f"sample(s) over param range [{min(params):.2f}, {max(params):.2f}] "
+              "— reconsider the route or drop to a per-section matte instead of "
+              "widening blindly.")
+
     # route_decision: which cap starts the reveal, and the vertex order to use
     start_is_A = (args.start_cap == "A")
     cap_A_pt = [round(v, 3) for v in mid(*capA)]
@@ -442,7 +678,12 @@ def main():
         "centerline_vertices": verts,
         "centerline_d": d_out,
         "section_widths": [round(w, 2) for w in widths],
-        "recommended_matte_width": round(max(widths), 1) if widths else 0.0,
+        "matte_width_profile": matte_width_profile,
+        "width_spread": width_spread,
+        "width_decision": width_decision,
+        "margin": round(margin, 3),
+        "recommended_matte_width": recommended_matte_width,
+        "containment_report": containment,
         "max_balance_imbalance": round(max_imb, 2),
         "caps": {"A": [list(capA[0]), list(capA[1])],
                  "B": [list(capB[0]), list(capB[1])]},
@@ -454,21 +695,41 @@ def main():
             "start_point": cap_A_pt if start_is_A else cap_B_pt,
             "end_point": cap_B_pt if start_is_A else cap_A_pt,
             "matte_vertex_order": [list(p) for p in matte_order],
+            "reveal_span": [0, 100],
             "note": ("Trim Paths reveals in matte_vertex_order; the production "
                      "matte polyline must use this order so the reveal starts at "
                      "start_cap."),
+            "trim_note": ("The production Trim Paths `e` keyframe value MUST run "
+                          "0->100 and the first matte vertex MUST be the true "
+                          "start cap. Never trim in from 10/20 to hide a bad first "
+                          "frame — a trim that starts mid-value is a tell that the "
+                          "start vertex is wrong; fix the vertex, not the trim."),
         },
     }
     with open(args.out, "w") as f:
         json.dump(out, f, indent=2)
 
+    svg_path = os.path.join(os.path.dirname(os.path.abspath(args.out)),
+                            "centerline.svg")
+    write_coverage_svg(svg_path, poly, railA, railB_rev, capA, capB, verts,
+                       matte_width_profile, recommended_matte_width, single_mode,
+                       report, containment)
+
     print(f"\nmethod: {method}")
     print(f"centerline vertices: {len(verts)}")
-    print(f"recommended_matte_width: {out['recommended_matte_width']}")
+    print(f"width_decision: {width_decision}  (width_spread={width_spread})")
+    print(f"recommended_matte_width: {out['recommended_matte_width']}  "
+          f"(single-width fallback)")
+    print(f"matte_width_profile: {matte_width_profile}")
+    print(f"containment: {len(containment['bleed_samples'])} bleed, "
+          f"{containment['overhang_samples_count']} overhang, "
+          f"worst over-reach {containment['worst_case']['over_reach']} "
+          f"({containment['worst_case']['kind']})")
     print(f"max_balance_imbalance: {max_imb:.2f}  "
           f"(ambiguous samples: {sum(1 for r in report if r['ambiguous'])})")
     print(f"d = {d_out}")
     print(f"wrote {args.out}")
+    print(f"wrote {svg_path}")
 
 
 if __name__ == "__main__":

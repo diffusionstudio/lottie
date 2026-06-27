@@ -16,11 +16,20 @@ pairing** — not a raster skeleton, not a guessed route.
 3. Read the printed **balance report**. Good route: `max_balance_imbalance` is small and
    only convex corners are `ambiguous`. If imbalance is large everywhere, the 2-rail
    assumption is wrong — reconsider topology (see below), do not raise stroke width.
-4. Copy from `centerline.json` into the production matte (see `build_matte_snippet.md`):
+4. **Open the auto-emitted `centerline.svg` first** (any editor's SVG preview, no dev
+   server): confirm the semi-transparent matte footprint hugs the fill, that any spill is
+   over background only, and **that there is no red** (red = cross-limb bleed). Then read
+   `width_spread` / `width_decision` and `containment_report`, then copy into the
+   production matte (see `build_matte_snippet.md`):
    - `route_decision.matte_vertex_order` → the matte polyline (`c:false`),
-   - `recommended_matte_width` → the fixed stroke width,
-   - and set `lc:3, lj:1, ml:8` for sharp marks.
-5. Build a **separate** debug scene from the same `centerline.json` to prove centeredness.
+   - if `width_decision` is `single-width` → `recommended_matte_width` (one fixed stroke);
+     if `per-section` → `matte_width_profile[i]` per section (one open sub-path each),
+   - set `lc:3, lj:1, ml:8` for sharp marks,
+   - assert the Trim `e` value runs **0 → 100** with the first vertex at the start cap.
+   If `centerline.svg` shows red bleed or heavy spill, switch to the per-section matte or
+   reconsider the route — do not widen and hope.
+5. A separate Lottie debug *scene* is optional richer proof; `centerline.svg` is the
+   required human-verification artifact and is never substituted by the Lottie scene.
 
 ## What it does
 
@@ -32,9 +41,16 @@ pairing** — not a raster skeleton, not a guessed route.
   - low ⇒ **curved** → **normal-foot** pairing (fold-tolerant; **secondary/unproven** —
     validate against a real folding-curved fixture before trusting it).
 - Emits `centerline.json`: `method`, `centerline_vertices`, `centerline_d`,
-  `section_widths`, `recommended_matte_width`, `max_balance_imbalance`, `caps`,
-  `railA_outer`, `railB_inner`, `balance_report[]` (with `left_foot`/`right_foot`/
-  `ambiguous`), and `route_decision`.
+  `section_widths` (raw per-method), `matte_width_profile` (per centerline section,
+  local width + 2·margin), `width_spread`, `width_decision`, `margin`,
+  `recommended_matte_width` (single-width fallback = max of the profile),
+  `containment_report` (`worst_case`, `bleed_samples[]`, `overhang_samples_count`),
+  `max_balance_imbalance`, `caps`, `railA_outer`, `railB_inner`, `balance_report[]`
+  (with `seg`/`left_foot`/`right_foot`/`ambiguous`), and `route_decision` (with
+  `reveal_span: [0,100]` and the 0→100 trim note).
+- Emits `centerline.svg` on **every run** next to the JSON: a flat coverage overlay
+  (filled contour, rails+caps, the matte footprint stroked at its actual width, the
+  centerline, **red bleed stretches**, yellow ambiguous rings). Opens with no dev server.
 
 ## When NOT to use it
 

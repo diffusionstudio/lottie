@@ -70,9 +70,12 @@ kinetic title with glass sweep uses typography plus visual effects.
 3. Decide the background policy before authoring.
 4. Write or update `public/projects/<project>/<scene-N>/lottie.json` and, when
    useful, `controls.json`. When `single-line-vectorization.md` is routed and the
-   source is a nontrivial filled mark, perform the geometry sandbox pass
-   (derivation script + sampled centerline + separate debug overlay) before
-   writing the production scene.
+   source is a nontrivial filled mark, perform the geometry sandbox pass before
+   writing the production scene: copy and adapt the bundled
+   `skills/text-to-lottie/scripts/centerline/derive_rails.py` (rail pairing — do not
+   reach for raster skeletonization first), read its balance report and
+   `route_decision`, and build a separate debug overlay to prove the route is
+   centered.
 5. Validate JSON, run or reuse the dev server, inspect exact frames with
    `?frame=N`, and fix render/design/motion issues before finishing.
 

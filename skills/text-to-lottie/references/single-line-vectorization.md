@@ -24,9 +24,15 @@ the cleanest representation.
 11. Matte Stroke Rules
 12. Debug Overlay Requirements
 13. Validation
-14. Main Deliverable Priority
-15. Invalid Solutions
-16. Lottie Implementation Notes
+14. Verification Checklist
+15. Main Deliverable Priority
+16. Invalid Solutions
+17. Lottie Implementation Notes
+
+A runnable reference solver lives at `scripts/centerline/derive_rails.py` (with
+`build_matte_snippet.md` and `README.md`). Copy it into the sandbox and adapt it
+for rail-clear ribbon/tube/folded-flag marks instead of re-deriving geometry by
+hand or reaching for a raster skeleton.
 
 ## Purpose
 
@@ -119,10 +125,11 @@ Choose methods in this order:
 
 1. **Reuse an existing real stroke path** if the SVG already contains one.
 2. **Ribbon-like polygon marks with visible inner and outer rails → paired-rail
-   midpointing is the REQUIRED first attempt, run through the geometry sandbox.**
-   Do not jump to raster skeletonization, and do not substitute a visually
-   authored spine, unless rail pairing fails and the failure is documented (see
-   the Authored-route fallback rule).
+   midpointing is the REQUIRED first attempt, run through the geometry sandbox**
+   using the bundled `scripts/centerline/derive_rails.py` (cap-count topology
+   gate + route-order pairing). Do not jump to raster skeletonization, and do not
+   substitute a visually authored spine, unless the cap-count test proves genuine
+   branching (see the Skeleton/authored fallback rule).
 3. **Angular polygonal shapes** → contour pairing, or straight-skeleton /
    medial-axis reasoning, then prune.
 4. **Organic brush shapes** → raster skeletonization as a fallback, then
@@ -155,46 +162,62 @@ Authored routes are for handwriting, ambiguous compound marks, or deliberate
 creative draw order — not a shortcut for rail-clear ribbon/tube marks. Do not
 jump to raster skeletonization unless rail pairing fails.
 
-Procedure (work from the source SVG contours, not a render):
+Procedure (work from the source SVG contours, not a render). The bundled solver
+`scripts/centerline/derive_rails.py` already implements this — copy it into the
+sandbox and adapt it rather than re-deriving by hand:
 
-1. Identify the outer and inner rails of the shape.
-2. Pair corresponding rail segments by route order and geometric role, not by
-   random nearest points.
-3. Sample corresponding points along the paired rails.
-4. Compute midpoint samples between paired points.
-5. Connect the midpoint samples into the intended reveal route.
-6. Refit as a clean path (see Path Cleanup And Refitting).
+1. **Detect caps by the U-turn test.** A cap is a short edge where the boundary
+   reverses: its neighbouring rail edges run anti-parallel (`dot(prev_dir,
+   next_dir)` strongly negative). The **count of true caps is the topology
+   signal**, read from geometry, not eyeballed.
+2. **Exactly 2 caps ⇒ one single folded ribbon.** Split the closed contour at the
+   two caps into an outer rail and an inner rail, and pair them **by route order /
+   vertex index** — never by inter-rail arclength. (The Wise flag is exactly this:
+   one folded 2-cap ribbon. Calling it a "branched ribbon" was the error that
+   licensed a skeleton walk; the cap-count test prevents that.)
+3. **Choose the pairing math by the sharp-corner-fraction test** (objective, not by
+   example): the fraction of interior rail vertices whose turn exceeds a corner
+   threshold (~25°).
+   - **High fraction ⇒ polygonal rails** → for each ribbon section take its
+     **midline** (the line midway between the two parallel rail segments) and set
+     centerline vertices = **intersections of consecutive midlines**; endpoints =
+     cap midpoints. This yields exact sharp corners and is **exact even when the
+     two paired rails have different lengths (folds)**. This is the primary, proven
+     path.
+   - **Low fraction ⇒ curved/organic rails** → pair by **normal-foot projection**:
+     walk one rail, drop a perpendicular at each sample, take the **nearest foot on
+     the opposite rail**, and midpoint the two; then refit. This is fold-tolerant
+     because it never assumes equal progress along the two rails. It is
+     **secondary and unproven** — validate against a real folding-curved fixture
+     before trusting it.
+4. Refit as a clean path (see Path Cleanup And Refitting), preserving sharp corners
+   where the source is angular.
+5. Choose matte stroke width from the measured rail distance
+   (`recommended_matte_width`), not by guessing.
+6. **Record a route decision** (`route_decision`): which cap the reveal starts from
+   and the resulting vertex order, since Trim-Paths direction depends on it.
 
-**Algorithm checklist (paired-rail midpointing):**
-
-- parse SVG paths and resolve transforms,
-- identify candidate rail polylines or path segments,
-- order rails by intended reveal route,
-- sample corresponding rail points by normalized arclength or manually mapped
-  segment pairs,
-- compute midpoint samples,
-- preserve sharp corners where the source is angular,
-- refit as a polyline or minimal cubic path,
-- choose matte stroke width from rail distance, not by guessing,
-- validate mid-reveal, not only final coverage.
+**Unequal rail length or a fold-back is NOT a reason to abandon rail pairing.**
+Normalized-arclength correspondence is the brittle method that breaks on folds —
+and note that *uniform-resample-both-rails-then-pair-by-index is normalized
+arclength in disguise*, so it is forbidden here too. The midline-intersection and
+normal-foot methods are built precisely for folded rails.
 
 **Minimum proof (rail-clear ribbon marks)** — before using the route as the matte
 driver: identify the paired rail segments; show midpoint samples/dots; show short
-normal guides or paired-boundary distance notes for representative samples; and
-confirm the driver path sits between the rails.
+normal guides or paired-boundary distance notes for representative samples
+(`balance_report` provides `left`/`right`/`left_foot`/`right_foot` per sample); and
+confirm the driver path sits between the rails with a low `max_balance_imbalance`
+(only convex corners should be `ambiguous`).
 
-**Authored-route fallback (rail-clear ribbon/tube marks only).** An authored
-route is invalid for these marks unless you first document why paired-rail
-midpointing failed. The fallback note must state:
-
-- what rail pairing was attempted,
-- which segment was ambiguous or unavailable,
-- why midpointing would be unreliable there,
-- a debug note or overlay proving the authored fallback still follows the visual
-  center.
-
-Without this documented failure, an authored or "designed" spine for a rail-clear
-ribbon mark is an invalid solution.
+**Skeleton/authored fallback (rail-clear ribbon/tube marks only).** The only valid
+trigger for abandoning rail pairing is **genuine topological branching** — ≥3 true
+caps, or a Y/T junction where no two-rail decomposition exists — proven by the cap
+count from the U-turn test, not by pairing difficulty. When that holds, split into
+multiple driver paths (preferred) or fall to a pruned skeleton. A fallback note
+must state: the cap count found, why no clean 2-rail split exists, and a debug
+overlay proving the fallback still follows the visual center. Unequal rail length,
+a fold-back, or "no arclength correspondence" are **invalid** fallback reasons.
 
 ## Geometry Sandbox Contract
 
@@ -203,10 +226,13 @@ shape-following path-driven mask, build a minimal geometry sandbox **before**
 authoring the production scene. This is a required derivation pass with concrete
 file artifacts, not a belief or a prose intent. Produce:
 
-- `scripts/<slug>-centerline/` — the sandbox directory,
+- `scripts/<slug>-centerline/` — the sandbox directory; **start from the bundled
+  `scripts/centerline/derive_rails.py`** (copy it in and adapt it — do not
+  reinvent the geometry or reach for raster skeletonization first),
 - a copy of the source SVG (or a normalized SVG) kept inside it,
-- a derivation script, e.g. `derive_centerline.py`,
-- `centerline.json` (or equivalent sampled midpoint data) as output,
+- a derivation script (the adapted `derive_rails.py`),
+- `centerline.json` as output — including `method` (which branch ran),
+  `recommended_matte_width`, `balance_report`, and `route_decision`,
 - a debug overlay SVG **or** Lottie scene showing: the original filled mark at low
   opacity, the outer rail, the inner rail, the paired rail segments, the midpoint
   samples, the derived driver route, and optional normal guides / equal-distance
@@ -223,8 +249,9 @@ sandbox, and do not ship the debug route as the visible artwork.
 
 These find a center skeleton, but they are a **fallback, not the main move**.
 
-- Use skeletonization when the source is organic, brush-like, or when rail
-  pairing is not reliable.
+- Use skeletonization when the source is organic/brush-like, or when the cap-count
+  test proves genuine branching (≥3 true caps / a Y or T junction). Unequal rail
+  length or a fold-back does **not** qualify — that is what rail pairing handles.
 - Do not use raster skeletonization as the first solution for clean polygonal
   ribbon marks.
 - The skeleton often retracts from sharp convex corners and may create branches,
@@ -247,14 +274,18 @@ These find a center skeleton, but they are a **fallback, not the main move**.
 ## Matte Stroke Rules
 
 - A matte stroke is a hidden technical mask, not a visible design stroke.
-- Use a stable stroke width.
-- Do not animate stroke width to compensate for poor centerline placement.
-- No default round caps or round joins.
-- Make cap/join choices **renderer-aware**: use source-matched cap/join settings
-  where the renderer supports them (sharp polygonal marks → sharp/miter-like
-  joins and butt/square caps). If renderer limitations force a different cap/join,
-  compensate by path placement and stable stroke width — not by decorative
-  rounding, endpoint blooms, or stroke-width animation.
+- Use a stable stroke width, fixed (`"w": {"a": 0, ...}`) at the measured
+  `recommended_matte_width`. Do not animate stroke width to compensate for poor
+  centerline placement.
+- **Sharp polygonal marks → exact Lottie values: `"lc": 3` (square cap), `"lj": 1`
+  (miter join), `"ml": 8`.** Never `"lc": 2` / `"lj": 2` (round) by default — round
+  caps/joins are the rounded-mask regression. Use round only when the source
+  geometry is genuinely round. (`lc`: 1=butt, 2=round, 3=square; `lj`: 1=miter,
+  2=round, 3=bevel.)
+- Keep driver coordinates in the **source viewBox/coordinate space** so the matte
+  registers with the fill; do not rescale the centerline independently of the fill.
+- If a renderer cannot honor miter/square, compensate by path placement and stable
+  stroke width — not by decorative rounding, endpoint blooms, or width animation.
 - Do not smooth sharp corners into curves unless the source has curves.
 - Do not add unnecessary points.
 - Do not use endpoint bloom as the main reveal solution.
@@ -314,11 +345,36 @@ screen-aligned edge. *Fails* when it reads as a simple top-to-bottom,
 left-to-right, diagonal, or rectangular crop — that is a directional wipe, wrong
 unless the user requested one.
 
+## Verification Checklist
+
+Before shipping a shape-following reveal from a filled mark, confirm:
+
+- **Topology:** cap count from the U-turn test matches the chosen treatment
+  (exactly 2 caps for single-ribbon pairing; ≥3 ⇒ multiple drivers / skeleton).
+- **Rail mode:** chosen by the sharp-corner-fraction test and recorded in
+  `centerline.json` `method` (polygonal-midline vs normal-foot).
+- **Point count:** centerline is minimal — roughly the number of real rail corners,
+  not dozens of points and no out-and-back branch retraces.
+- **Centeredness:** `max_balance_imbalance` is reported and small; only convex
+  corners are flagged `ambiguous`.
+- **Route:** `route_decision` (start cap + vertex order) is recorded and matches the
+  rendered reveal direction.
+- **Matte stroke:** `lc:3, lj:1, ml:8` for sharp marks (never `lc:2`/`lj:2`); width
+  fixed (`"a":0`), no width keyframes; coords in the source viewBox space.
+- **Artifacts:** `centerline.json` exists and a *separate* debug project renders
+  rails + normal guides + ambiguous markers.
+- **Main deliverable:** production scene completes the original-artwork preservation,
+  wordmark/logo fidelity, composition, timing, and export/player validation — and
+  the geometry pass was time-boxed.
+
 ## Main Deliverable Priority
 
 - Spend only enough time on the driver path to produce a valid reveal: run the
   geometry sandbox for nontrivial marks, keep it minimal, then finish production.
   Do not over-engineer a general geometry solver, and do not stop at the sandbox.
+- **Time-box the geometry:** derive → prove with the balance report → STOP geometry
+  → spend the remaining budget on the full animation (composition, wordmark, timing,
+  export). The centerline is one subtask, not the deliverable.
 - If a segment is ambiguous, make a minimal documented route-selection decision,
   create a debug note if needed, and continue the main animation.
 - Still finish the real work: original artwork preservation, logo/wordmark
@@ -335,7 +391,10 @@ unless the user requested one.
 - Uniform scaling or offset-only resizing as the final method.
 - Oversized matte width as the only proof.
 - Animated stroke-width compensation for poor path placement.
-- Round caps/joins added by default.
+- Round caps/joins added by default (`lc:2` / `lj:2` on a sharp polygonal matte).
+- Declaring rail pairing "unreliable" because of unequal rail lengths or a
+  fold-back, then using raster skeletonization (or uniform-resample-by-index, which
+  is normalized-arclength correspondence in disguise).
 - Smoothing sharp geometry.
 - Unnecessary extra SVG points.
 - Endpoint bloom as the main reveal solution.

@@ -24,7 +24,7 @@ pairing** — not a raster skeleton, not a guessed route.
    - `route_decision.matte_vertex_order` → the matte polyline (`c:false`),
    - if `width_decision` is `single-width` → `recommended_matte_width` (one fixed stroke);
      if `per-section` → `matte_width_profile[i]` per section (one open sub-path each),
-   - use `route_decision.matte_linecap` + `cap_decision` (butt `lc:1` for sharp/polygonal, round `lc:2` for curved/handwriting or `--linecap round`), `lj:1` (miter join), `ml:8` — the margin-bounded fillet stage de-notches gentle corners so the butt cap keeps the settled mark sharp; the route may include filleted (béziered) corners, so when `route_decision.matte_shape` is present copy its `v`/`i`/`o` verbatim and keep them; the route is cap-extended so the terminal blooms over background (clipped) and still covers each cap, avoiding the frame-1 square-cap bloom,
+   - use `route_decision.matte_linecap` + `cap_decision` (butt `lc:1` is the **default** for sharp/polygonal, round `lc:2` for curved/handwriting or `--linecap round`), `lj:1` (miter join), `ml:8` — the butt cap keeps the settled mark sharp; `cap_decision.notch_risk_corners` (always reported) lists the corners that show a *transient* frontier notch under the butt cap, so **offer `--linecap round` (or the opt-in `--fillet` stage) as a revision only if that transient matters** for this mark; when the opt-in fillet stage fires, `route_decision.matte_shape` is present — copy its `v`/`i`/`o` verbatim and keep them; the route is cap-extended so the terminal blooms over background (clipped) and still covers each cap, avoiding the frame-1 square-cap bloom,
    - assert the Trim `e` value runs **0 → 100** with the first vertex at the start cap, and inspect the corner-crossing frames (frontier passing each sharp fold) — a clean settled frame is not proof they are notch-free.
    If `centerline.svg` shows red bleed or heavy spill, switch to the per-section matte or
    reconsider the route — do not widen and hope. **Any magenta** (apex-clip) means a fillet was
@@ -50,15 +50,20 @@ pairing** — not a raster skeleton, not a guessed route.
   (with `seg`/`left_foot`/`right_foot`/`ambiguous`), and `route_decision` (with
   `matte_linecap`, `cap_decision`, `reveal_span: [0,100]`, the 0→100 trim note, and —
   when corners are filleted — `matte_shape` `{v,i,o,c:false}`).
-- Runs a **margin-bounded corner-fillet stage** on polygonal marks (skip with `--no-fillet`):
-  de-notches gentle corners so the cap can stay **butt** (`lc:1`), gated by a tip-coverage
-  check that leaves a corner sharp rather than round the settled apex. Reports `fillet_report`
-  (`filleted` / `left_sharp` / `tip_clip_samples`) and decides the cap by content class
-  (butt for sharp/polygonal, round for curved/handwriting; override with `--linecap`).
+- Decides the cap by **content class** (butt `lc:1` for sharp/polygonal, round `lc:2` for
+  curved/handwriting; override with `--linecap`) and **always** reports
+  `cap_decision.notch_risk_corners` — the sharp corners that show a transient butt-cap notch
+  (the trigger to offer `--linecap round` as a revision).
+- Has an **opt-in margin-bounded corner-fillet stage** (`--fillet`, **off by default**): on
+  polygonal marks it de-notches gentle corners the matte margin can absorb so the cap can stay
+  **butt** (`lc:1`), gated by a tip-coverage check that leaves a corner sharp rather than round
+  the settled apex. It no-ops on tight-margin marks (e.g. thin folded-flag ribbons), so it is
+  off unless asked. When it fires it reports `fillet_report` (`filleted` / `left_sharp` /
+  `tip_clip_samples`) and emits `route_decision.matte_shape`.
 - Emits `centerline.svg` on **every run** next to the JSON: a flat coverage overlay
   (filled contour, rails+caps, the matte footprint stroked with the **decided cap** and
   filleted arcs, the centerline, **red bleed stretches**, yellow ambiguous rings, **green
-  filleted / grey left-sharp / magenta apex-clip** corner markers). Opens with no dev server.
+  filleted / grey notch-risk / magenta apex-clip** corner markers). Opens with no dev server.
 
 ## When NOT to use it
 

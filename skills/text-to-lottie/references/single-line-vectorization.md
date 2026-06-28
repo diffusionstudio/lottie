@@ -304,11 +304,13 @@ These find a center skeleton, but they are a **fallback, not the main move**.
   - **Cap defaults to butt (`lc:1`) for sharp/polygonal marks.** As the Trim frontier crosses
     an interior corner/fold, the leading cap is perpendicular to the *local* tangent and
     cannot match both segment directions, so a flat **butt** cap leaves a transient
-    **zigzag/notch** (≈ ½·width·tan(turn/2)). The solver's **margin-bounded fillet stage**
-    removes that notch on every corner the tight matte margin can absorb — keeping the cap
-    butt and the settled apex 100% sharp. A corner the margin can't absorb is left sharp and
-    listed in `cap_decision.notch_risk_corners`; its transient notch is accepted, not
-    auto-fixed.
+    **zigzag/notch** (≈ ½·width·tan(turn/2)). The settled mark stays 100% sharp regardless
+    (miter join) — only this moving frontier notches. The solver **always** reports the sharp
+    interior corners that notch in `cap_decision.notch_risk_corners`; by default the transient
+    notch is **accepted, not auto-fixed**. To remove it, offer `--linecap round` (below) or the
+    **opt-in** `--fillet` stage (off by default), which de-notches the corners the matte margin
+    can absorb while a tip-coverage check keeps the settled apex sharp — it no-ops on
+    tight-margin marks (thin folded-flag ribbons), so it is off unless asked.
   - **Cap defaults to round (`lc:2`) only for curved/handwriting marks** (pen-style terminals),
     or on explicit user request. A round cap sweeps interior crossings smoothly and, because
     the matte only reveals the fill, rounds *only the frontier* — the settled mark stays sharp.
@@ -420,10 +422,11 @@ Before shipping a shape-following reveal from a filled mark, confirm:
   not `lc:3` (square blooms at frame 1); width fixed (`"a":0`), no width keyframes; coords in
   the source viewBox space. If `route_decision.matte_shape` is present, copy its `v`/`i`/`o`
   verbatim (filleted corners) instead of re-flattening to a polyline.
-- **Fillets:** `fillet_report.tip_clip_samples` is empty (no magenta on `centerline.svg`) — a
-  fillet that would round the settled apex was rejected, never shipped; and
-  `cap_decision.notch_risk_corners` is a conscious accept (or the user opted into `--linecap
-  round`).
+- **Fillets:** with the **opt-in** `--fillet` stage off (default), there is no `fillet_report`
+  and no magenta — `cap_decision.notch_risk_corners` is a conscious accept (or the user opted
+  into `--linecap round`). If you ran `--fillet`, confirm `fillet_report.tip_clip_samples` is
+  empty (no magenta on `centerline.svg`) — a fillet that would round the settled apex was
+  rejected, never shipped.
 - **Frontier at corners:** the corner-crossing frames (frontier passing each sharp fold)
   are rendered and clean — no transient notch. A clean settled frame is not proof.
 - **Width decision:** `width_spread` reported and the width decision recorded —
@@ -474,9 +477,10 @@ Before shipping a shape-following reveal from a filled mark, confirm:
 - **An UNBOUNDED fillet on the centerline driver** — a fillet is a regression **only** when it
   pulls the matte off the fill's convex apex: with radius large relative to the over-coverage
   margin, the matte under-covers the corner and the *settled* mark looks rounded. It is **not**
-  a regression in general. A **margin-bounded** fillet on a gentle corner, gated by the
-  measured **tip-coverage check** (the solver's `plan_fillets` + `fillet_report`), is the
-  supported way to keep a **butt** cap notch-free without ever rounding the settled apex. A
+  a regression in general. A **margin-bounded** fillet on a gentle corner (the **opt-in**
+  `--fillet` stage, off by default), gated by the measured **tip-coverage check** (the solver's
+  `plan_fillets` + `fillet_report`), is the supported way to keep a **butt** cap notch-free
+  without ever rounding the settled apex. A
   sharp corner whose tight margin can't absorb a notch-erasing fillet is **left sharp** (the
   transient frontier notch is accepted and reported in `cap_decision.notch_risk_corners`) — it
   is NOT auto-rounded and NOT auto-round-capped. Shipping a fillet the tip-coverage check

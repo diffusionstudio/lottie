@@ -62,11 +62,13 @@ Hard rules (these are what the regression got wrong):
     artwork — that is the rounded-mask regression, and it stays banned.
   - **Cap defaults to butt (`lc:1`) for sharp/polygonal marks.** As the Trim frontier crosses
     an interior corner/fold, a butt cap leaves a hard step — a transient **zigzag/notch**
-    (≈ ½·width·tan(turn/2)). The solver's **margin-bounded fillet stage** removes that notch
-    on every corner the tight matte margin can absorb (gated by a tip-coverage check so the
-    settled apex stays sharp), letting the cap stay butt. A corner the margin can't absorb is
-    left sharp and listed in `cap_decision.notch_risk_corners` — its transient notch is
-    accepted, not auto-fixed.
+    (≈ ½·width·tan(turn/2)). The settled mark stays sharp regardless (miter join); only this
+    *moving* frontier notches. Every sharp interior corner is listed in
+    `cap_decision.notch_risk_corners` (always reported) — its transient notch is **accepted by
+    default, not auto-fixed**. To remove it, either OFFER `--linecap round` (rounds only the
+    frontier) or run the **opt-in** `--fillet` stage (off by default): on the corners the matte
+    margin can absorb it de-notches while a tip-coverage check keeps the settled apex sharp; it
+    no-ops on tight-margin marks (thin ribbons), which is why it is off unless asked.
   - **Cap defaults to round (`lc:2`) only for curved/handwriting marks**, or on `--linecap
     round`. A round cap rounds *only the frontier* (the settled mark is the sharp fill, so it
     stays sharp); it stays the opt-in tool for a transient notch the user wants gone, but is
@@ -145,10 +147,11 @@ same caveat as the curved/normal-foot branch.
 **Terminal-cap rule.** Use `route_decision.matte_linecap` with the cap-extended
 `matte_vertex_order` (or `matte_shape`): the terminal blooms over background and is clipped
 away (no frame-1 bloom) and each cap is still covered because the endpoint was pushed out by
-half a width. **Butt (`lc:1`) is the default for sharp/polygonal marks** — the margin-bounded
-fillet stage removes the interior corner notch on every corner the margin can absorb, so the
-cap stays butt and the settled apex stays sharp; corners left sharp are listed in
-`cap_decision.notch_risk_corners` (transient notch accepted). **Round (`lc:2`) is the default
+half a width. **Butt (`lc:1`) is the default for sharp/polygonal marks** — the settled apex
+stays sharp (miter join), and the sharp interior corners that show a transient frontier notch
+are listed in `cap_decision.notch_risk_corners` (always reported, notch accepted by default).
+The **opt-in** `--fillet` stage (off by default) can de-notch the corners the margin can absorb,
+but it no-ops on tight ribbons. **Round (`lc:2`) is the default
 only for curved/handwriting marks** (or `--linecap round` when the user wants a left-sharp
 corner's transient notch gone) — it sweeps crossings smoothly and rounds only the frontier.
 Square (`lc:3`) is what the regression used to "guarantee full reveal," but it blooms at the
@@ -166,7 +169,7 @@ join (`lj:3`) rather than widening.
 The solver auto-emits `centerline.svg` next to `centerline.json` on every run — that flat
 overlay (filled contour, rails+caps, the matte footprint stroked with the **decided cap** and
 filleted arcs, centerline, **red bleed stretches**, yellow ambiguous rings, **green filleted
-corners / grey left-sharp corners / magenta apex-clip crosses**) is the **required**
+corners / grey notch-risk corners / magenta apex-clip crosses**) is the **required**
 human-verification artifact and opens with no dev server. Read it first — **any magenta means a
 fillet was rejected for clipping the settled apex (do not ship it)**. The Lottie debug scene
 below is **optional** richer proof, never a substitute for the flat SVG.

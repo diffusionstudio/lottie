@@ -48,7 +48,7 @@ Usage:
   options: --out centerline.json  --corner-deg 25  --cap-anti -0.6
            --start-cap A|B  --samples 2
            --margin-frac 0.04  --spread-gate 1.6  --adjacency-frac 0.15
-           --linecap auto|butt|round  --no-fillet
+           --linecap auto|butt|round  --fillet (opt-in)
            --fillet-safety 0.7  --fillet-seg-frac 0.35  --fillet-notch-frac 0.5
            --fillet-min 0
 
@@ -698,7 +698,8 @@ def _poly_d(pts):
 
 def write_coverage_svg(path, poly, railA, railB_rev, capA, capB, centerline_verts,
                        matte_order, widths_ordered, single_width, single_mode,
-                       report, containment, linecap, footprint_nodes, fillet_report):
+                       report, containment, linecap, footprint_nodes, fillet_report,
+                       notch_risk=()):
     """Flat, dev-server-free, HONEST proof of the matte footprint.
 
     The footprint is drawn exactly as production strokes it — the cap-extended
@@ -786,7 +787,7 @@ def write_coverage_svg(path, poly, railA, railB_rev, capA, capB, centerline_vert
             cx, cy = r["p"]
             p.append(f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{ring:.2f}" '
                      f'fill="none" stroke="#f2c400" stroke-width="{thin:.2f}"/>')
-    # 8. corner decisions: green ring = filleted, grey dot = left sharp,
+    # 8. corner decisions: green ring = filleted, grey dot = left-sharp / notch-risk,
     #    magenta cross = apex clip (a fillet there would round the settled mark)
     nfil = nsharp = nclip = 0
     if fillet_report:
@@ -806,6 +807,15 @@ def write_coverage_svg(path, poly, railA, railB_rev, capA, capB, centerline_vert
                      f'M{cx - d:.2f},{cy + d:.2f} L{cx + d:.2f},{cy - d:.2f}" '
                      f'stroke="#d400d4" stroke-width="{bright:.2f}"/>')
             nclip += 1
+    else:
+        # default run (fillet stage off): mark notch-risk corners grey so the required
+        # SVG proof still shows where the butt cap transiently notches (settled stays
+        # sharp). Empty under a round cap, which sweeps crossings notch-free.
+        for i in notch_risk:
+            cx, cy = centerline_verts[i]
+            p.append(f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{ring * 0.6:.2f}" '
+                     f'fill="#888888"/>')
+            nsharp += 1
     # 9. legend so the picture and the JSON reconcile
     wc = containment["worst_case"]
     nbleed = len(containment["bleed_samples"])
@@ -814,12 +824,12 @@ def write_coverage_svg(path, poly, railA, railB_rev, capA, capB, centerline_vert
     p.append(f'<text x="{lx:.2f}" y="{ly:.2f}" font-family="sans-serif" '
              f'font-size="{fs:.2f}" fill="#222">'
              f'cap lc:{linecap} ({cap_name}) | worst over-reach {wc["over_reach"]} '
-             f'({wc["kind"]}) | bleed {nbleed} | fillet {nfil} sharp {nsharp} '
+             f'({wc["kind"]}) | bleed {nbleed} | fillet {nfil} notch-risk {nsharp} '
              f'apex-clip {nclip}</text>')
     p.append(f'<text x="{lx:.2f}" y="{ly + fs * 1.25:.2f}" font-family="sans-serif" '
              f'font-size="{fs * 0.85:.2f}" fill="#666">'
              f'amber = over background (cosmetic) | red = cross-limb bleed (defect) | '
-             f'green = filleted | grey = left sharp | '
+             f'green = filleted | grey = notch-risk (transient butt-cap notch) | '
              f'magenta = apex clip — a fillet would round the settled corner (rejected)'
              f'</text>')
     p.append('</svg>')
@@ -864,8 +874,10 @@ def main():
     ap.add_argument("--out", default="centerline.json")
     ap.add_argument("--corner-deg", type=float, default=25.0,
                     help="turn angle (deg) counted as a sharp corner")
-    ap.add_argument("--no-fillet", action="store_false", dest="fillet",
-                    help="disable the corner-fillet stage (polygonal marks)")
+    ap.add_argument("--fillet", action="store_true", dest="fillet",
+                    help="OPT-IN: enable the margin-bounded corner-fillet stage "
+                         "(off by default; only helps generous-margin polygonal marks "
+                         "where the matte margin can absorb a de-notching arc)")
     ap.add_argument("--fillet-safety", type=float, default=0.7,
                     dest="fillet_safety",
                     help="k_safe: fraction of the apex-coverage radius to allow")
@@ -985,7 +997,9 @@ def main():
             print("WARNING: tip-coverage rejected a fillet (apex-clip) — corner "
                   "left sharp; a fillet there would round the settled mark.")
 
-    # ---- cap decision (content-class; replaces the hardcoded matte_linecap) ----
+    # ---- cap decision (content-class) + notch-risk diagnostic (ALWAYS emitted) ----
+    # Cheap, and it drives the agent's "offer a rounded reveal as a revision" behaviour,
+    # so it runs on every polygonal mark whether or not the opt-in fillet stage ran.
     _lc_override = {"butt": 1, "round": 2}.get(args.linecap)   # None when auto
     if not polygonal:
         linecap = 2
@@ -995,8 +1009,15 @@ def main():
         cap_reason = "user override"
     else:
         linecap = 1
-        cap_reason = "sharp mark: butt terminals; gentle corners filleted"
-    print(f"cap_decision: lc:{linecap} ({cap_reason})")
+        cap_reason = "sharp mark: butt terminals (miter join keeps settled corners sharp)"
+    # Corners that show a transient butt-cap notch as the reveal frontier crosses them:
+    # every sharp interior corner not de-notched by an (opt-in) fillet. Empty under a
+    # round cap (lc:2), which sweeps crossings notch-free.
+    notch_risk = ([i for i in range(1, len(verts) - 1)
+                   if turn_angle_deg(verts[i - 1], verts[i], verts[i + 1]) >= args.corner_deg
+                   and i not in fillets]
+                  if linecap == 1 else [])
+    print(f"cap_decision: lc:{linecap} ({cap_reason}); notch_risk_corners={notch_risk}")
 
     # route_decision: which cap starts the reveal, and the vertex order to use
     start_is_A = (args.start_cap == "A")
@@ -1008,16 +1029,16 @@ def main():
     # order V0..Vn; reverse it when the reveal starts from cap B)
     widths_ordered = matte_width_profile if start_is_A else matte_width_profile[::-1]
 
-    # --- cap extension (pairs with a ROUND cap, lc:2, in production) ---
+    # --- cap extension (cap-agnostic: works for butt lc:1 and round lc:2) ---
     # A square cap (lc:3) projects half the stroke width past the start vertex the
     # instant Trim leaves 0, so the reveal "pops" a full-width blob at frame 1
     # instead of growing from a point. Pushing the two terminal vertices outward
     # along their own segment by half the local matte width puts the true cap edge
-    # at the extended endpoint, so the round cap's start/end disc blooms OVER
-    # background (clipped away by the track matte) — clean point-start, full finish,
-    # and no half-width of fill left unrevealed. (Round, not butt: the round cap is
-    # what keeps interior corner/fold crossings notch-free; see the route note.)
-    # This is geometry, NOT a trim change (the trim still runs 0->100).
+    # at the extended endpoint, so the terminal (butt's flat end or round's disc)
+    # blooms OVER background (clipped away by the track matte) — clean point-start,
+    # full finish, and no half-width of fill left unrevealed. The cap choice (butt
+    # default for sharp, round for curved) is decided above; this extension is
+    # geometry, NOT a trim change (the trim still runs 0->100).
     def _extend_caps(order, w_ord):
         v = [list(p) for p in order]
         if len(v) >= 2:
@@ -1070,20 +1091,25 @@ def main():
                 "start_halfwidth": round(widths_ordered[0] / 2.0, 3),
                 "end_halfwidth": round(widths_ordered[-1] / 2.0, 3),
                 "note": ("matte_vertex_order is already cap-extended; build the "
-                         "production stroke from it with lc:2 (round) — the round "
-                         "cap sweeps interior corner/fold crossings without a notch "
-                         "and rounds only the moving frontier, never the settled "
-                         "mark. The raw (un-extended) route is matte_vertex_order_raw."),
+                         "production stroke from it with route_decision.matte_linecap "
+                         "(cap_decision is authoritative — butt lc:1 for sharp marks, "
+                         "round lc:2 for curved). A round cap also sweeps interior "
+                         "corner/fold crossings notch-free; a butt cap keeps the moving "
+                         "frontier flat and shows a transient notch at "
+                         "cap_decision.notch_risk_corners (settled mark stays sharp). "
+                         "The raw (un-extended) route is matte_vertex_order_raw."),
             },
             "reveal_span": [0, 100],
             "note": ("Trim Paths reveals in matte_vertex_order; the production "
                      "matte polyline must use this order so the reveal starts at "
-                     "start_cap. Stroke it with lc:2 (round), lj:1 (miter) — the "
-                     "round cap sweeps interior corner/fold crossings cleanly "
-                     "(a butt cap notches there), while the miter join keeps the "
-                     "settled mark sharp. The order is already extended half a width "
-                     "past each cap so the round start/end disc blooms over "
-                     "background (clipped) and the reveal still covers each cap."),
+                     "start_cap. Stroke it with route_decision.matte_linecap "
+                     "(butt lc:1 default for sharp marks, round lc:2 for curved or "
+                     "--linecap round), lj:1 (miter) — the miter join keeps the "
+                     "settled mark sharp; a round cap additionally sweeps interior "
+                     "corner/fold crossings notch-free, a butt cap shows a transient "
+                     "notch at cap_decision.notch_risk_corners. The order is already "
+                     "extended half a width past each cap so the start/end disc blooms "
+                     "over background (clipped) and the reveal still covers each cap."),
             "trim_note": ("The production Trim Paths `e` keyframe value MUST run "
                           "0->100 and the first matte vertex MUST be the true "
                           "start cap. Never trim in from 10/20 to hide a bad first "
@@ -1091,30 +1117,28 @@ def main():
                           "sufficient — a square cap (lc:3) blooms a full-width "
                           "blob at the first nonzero frame even when the trim "
                           "starts at 0, which reads as 'reveal starts at ~5-10%'. "
-                          "Use lc:2 (round) with the cap-extended order above so "
-                          "the reveal grows from a point and corner crossings stay "
-                          "notch-free."),
+                          "Use route_decision.matte_linecap (butt or round, never "
+                          "lc:3) with the cap-extended order above so the reveal "
+                          "grows from a point."),
         },
     }
 
-    # New keys are gated so `--no-fillet --linecap round` reproduces HEAD exactly
-    # (byte-identical JSON): cap_decision/fillet_report only when the fillet stage
-    # is enabled; matte_shape only when >=1 corner is actually filleted.
-    if args.fillet:
-        notch_risk = [c["i"] for c in (fillet_report["left_sharp"]
-                                       if fillet_report else [])
-                      if c["reason"] == "tight"]
-        out["route_decision"]["cap_decision"] = {
-            "value": linecap,
-            "reason": cap_reason,
-            "notch_risk_corners": notch_risk,
-            "note": ("This run uses lc:%d — authoritative over the legacy lc:2 "
-                     "phrasing in the notes above; read matte_linecap/cap_decision. "
-                     "Corners in notch_risk_corners show a transient frontier notch "
-                     "under a butt cap; the settled frame stays sharp. Opt into "
-                     "lc:2 (round cap) only if that transient matters for this mark."
-                     % linecap),
-        }
+    # cap_decision (+ notch_risk) is emitted ALWAYS so the default sharp run still tells
+    # the agent which corners would notch — the trigger to OFFER --linecap round. The
+    # default matte GEOMETRY (matte_vertex_order + matte_linecap) is unchanged vs the
+    # pre-fillet route; cap_decision is purely additive. The heavier fillet outputs stay
+    # gated: matte_shape only when >=1 corner is actually filleted, fillet_report only
+    # when the opt-in --fillet stage ran.
+    out["route_decision"]["cap_decision"] = {
+        "value": linecap,
+        "reason": cap_reason,
+        "notch_risk_corners": notch_risk,
+        "note": ("matte_linecap/cap_decision are authoritative over any legacy lc:2 "
+                 "phrasing in the notes above. Corners in notch_risk_corners show a "
+                 "transient frontier notch under the butt cap; the settled frame stays "
+                 "sharp (miter join). OFFER lc:2 (round cap), or the opt-in --fillet "
+                 "stage, as a revision only if that transient matters for this mark."),
+    }
     if fillets:
         out["route_decision"]["matte_shape"] = matte_shape
     if fillet_report is not None:
@@ -1128,7 +1152,7 @@ def main():
     write_coverage_svg(svg_path, poly, railA, railB_rev, capA, capB, verts,
                        matte_order_capext, widths_ordered, recommended_matte_width,
                        single_mode, report, containment, linecap, shape_nodes,
-                       fillet_report)
+                       fillet_report, notch_risk)
 
     print(f"\nmethod: {method}")
     print(f"centerline vertices: {len(verts)}")

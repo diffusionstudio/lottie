@@ -17,9 +17,7 @@ Two layers: a matte driver (`td:1`) and the original filled mark (`tt:1`).
   "ks": { /* identity transform */ },
   "shapes": [{ "ty": "gr", "nm": "matte", "it": [
     { "ty": "sh", "nm": "centerline", "ks": { "a": 0, "k": {
-        // If route_decision.matte_shape exists, copy its v/i/o VERBATIM (filleted
-        // corners carry non-zero i/o tangents — do NOT re-flatten to a polyline).
-        // Otherwise i/o are all [0,0] and v = route_decision.matte_vertex_order.
+        // Open polyline: i/o are all [0,0]; v = route_decision.matte_vertex_order.
         "i": [[0,0], ...], "o": [[0,0], ...],
         "v": [ /* route_decision.matte_vertex_order — already cap-extended */ ],
         "c": false                          // OPEN polyline, never closed
@@ -65,10 +63,8 @@ Hard rules (these are what the regression got wrong):
     (≈ ½·width·tan(turn/2)). The settled mark stays sharp regardless (miter join); only this
     *moving* frontier notches. Every sharp interior corner is listed in
     `cap_decision.notch_risk_corners` (always reported) — its transient notch is **accepted by
-    default, not auto-fixed**. To remove it, either OFFER `--linecap round` (rounds only the
-    frontier) or run the **opt-in** `--fillet` stage (off by default): on the corners the matte
-    margin can absorb it de-notches while a tip-coverage check keeps the settled apex sharp; it
-    no-ops on tight-margin marks (thin ribbons), which is why it is off unless asked.
+    default, not auto-fixed**. To remove it, OFFER `--linecap round` (rounds only the frontier,
+    leaving the settled mark sharp) as a revision when that transient matters for the mark.
   - **Cap defaults to round (`lc:2`) only for curved/handwriting marks**, or on `--linecap
     round`. A round cap rounds *only the frontier* (the settled mark is the sharp fill, so it
     stays sharp); it stays the opt-in tool for a transient notch the user wants gone, but is
@@ -76,7 +72,7 @@ Hard rules (these are what the regression got wrong):
 - **Never square (`lc:3`) at the start.** A square cap projects half the stroke width past the
   start vertex the instant Trim leaves 0, so the reveal pops a full-width blob at frame 1 — it
   reads as "starting at ~5–10%," not growing from a point. The solver resolves this:
-  `route_decision.matte_vertex_order` (and `matte_shape`) is **already extended** outward by
+  `route_decision.matte_vertex_order` is **already extended** outward by
   half the local width at both ends (`route_decision.cap_extension`), so the butt/round
   terminal sits over *background* (clipped away by the matte), giving a clean point-start *and*
   full finish. Neither butt nor round reaches further than the fill, so caps never worsen
@@ -145,13 +141,12 @@ same caveat as the curved/normal-foot branch.
 ```
 
 **Terminal-cap rule.** Use `route_decision.matte_linecap` with the cap-extended
-`matte_vertex_order` (or `matte_shape`): the terminal blooms over background and is clipped
+`matte_vertex_order`: the terminal blooms over background and is clipped
 away (no frame-1 bloom) and each cap is still covered because the endpoint was pushed out by
 half a width. **Butt (`lc:1`) is the default for sharp/polygonal marks** — the settled apex
 stays sharp (miter join), and the sharp interior corners that show a transient frontier notch
 are listed in `cap_decision.notch_risk_corners` (always reported, notch accepted by default).
-The **opt-in** `--fillet` stage (off by default) can de-notch the corners the margin can absorb,
-but it no-ops on tight ribbons. **Round (`lc:2`) is the default
+**Round (`lc:2`) is the default
 only for curved/handwriting marks** (or `--linecap round` when the user wants a left-sharp
 corner's transient notch gone) — it sweeps crossings smoothly and rounds only the frontier.
 Square (`lc:3`) is what the regression used to "guarantee full reveal," but it blooms at the
@@ -167,12 +162,10 @@ join (`lj:3`) rather than widening.
 ## Debug scene (OPTIONAL — the required flat proof is `centerline.svg`)
 
 The solver auto-emits `centerline.svg` next to `centerline.json` on every run — that flat
-overlay (filled contour, rails+caps, the matte footprint stroked with the **decided cap** and
-filleted arcs, centerline, **red bleed stretches**, yellow ambiguous rings, **green filleted
-corners / grey notch-risk corners / magenta apex-clip crosses**) is the **required**
-human-verification artifact and opens with no dev server. Read it first — **any magenta means a
-fillet was rejected for clipping the settled apex (do not ship it)**. The Lottie debug scene
-below is **optional** richer proof, never a substitute for the flat SVG.
+overlay (filled contour, rails+caps, the matte footprint stroked with the **decided cap**,
+centerline, **red bleed stretches**, yellow ambiguous rings, **grey notch-risk corner
+markers**) is the **required** human-verification artifact and opens with no dev server. The
+Lottie debug scene below is **optional** richer proof, never a substitute for the flat SVG.
 
 `public/projects/<slug>-centerline-debug/scene-1/lottie.json`, one static frame. Layer
 list (front to back) — all readable colored strokes/dots; this styling never leaks into

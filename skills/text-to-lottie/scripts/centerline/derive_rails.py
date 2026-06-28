@@ -48,9 +48,7 @@ Usage:
   options: --out centerline.json  --corner-deg 25  --cap-anti -0.6
            --start-cap A|B  --samples 2
            --margin-frac 0.04  --spread-gate 1.6  --adjacency-frac 0.15
-           --linecap auto|butt|round  --fillet (opt-in)
-           --fillet-safety 0.7  --fillet-seg-frac 0.35  --fillet-notch-frac 0.5
-           --fillet-min 0
+           --linecap auto|butt|round
 
 Every run also writes `centerline.svg` next to the JSON: a flat coverage overlay
 (filled contour, rails+caps, the matte footprint stroked at its actual width,
@@ -73,7 +71,6 @@ def dot(a, b): return a[0] * b[0] + a[1] * b[1]
 def cross(a, b): return a[0] * b[1] - a[1] * b[0]
 def length(a): return math.hypot(a[0], a[1])
 def mid(a, b): return ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
-def clamp(x, lo, hi): return max(lo, min(hi, x))
 
 
 def norm(a):
@@ -493,198 +490,6 @@ def containment_pass(report, verts, poly, matte_profile, single_width,
             "overhang_samples_count": overhang}
 
 
-# ---------- corner fillet stage (margin-bounded, apex-safe) ----------
-# Settled sharpness is sacred: a fillet ships only where a measured tip-coverage
-# check proves the convex apex stays covered. On a gentle corner with a tight
-# margin a bounded fillet erases the transient butt-cap notch (so the cap can stay
-# butt). A sharp corner the margin can't absorb is LEFT SHARP (notch accepted,
-# reported) — never auto-rounded. See build_matte_snippet.md / single-line-
-# vectorization.md for the product rule.
-
-def _arc_nodes(V, u_prev, u_next, r, theta):
-    """Bezier nodes approximating a fillet arc of radius r at vertex V.
-
-    u_prev/u_next are unit dirs from V toward the prev/next centerline vertex;
-    theta is the turn angle (deviation-from-straight, deg). Returns
-    (nodes, center, P_a, P_b, pa_ang, sweep): nodes is a list of
-    {"v","i","o"} from the incoming tangent point P_a to the outgoing tangent
-    point P_b (Lottie tangents, relative to their vertex). The first node's `i`
-    and the last node's `o` are zero (they butt onto straight runs). Arcs wider
-    than 90 deg are split into multiple cubic segments.
-    """
-    a = math.radians(theta) / 2.0
-    sec_a = 1.0 / math.cos(a)
-    tan_a = math.tan(a)
-    bis = norm(add(u_prev, u_next))          # interior bisector: toward the center
-    C = add(V, mul(bis, r * sec_a))
-    P_a = add(V, mul(u_prev, r * tan_a))
-    P_b = add(V, mul(u_next, r * tan_a))
-    pa_ang = math.atan2(P_a[1] - C[1], P_a[0] - C[0])
-    pb_ang = math.atan2(P_b[1] - C[1], P_b[0] - C[0])
-    sweep = pb_ang - pa_ang
-    while sweep <= -math.pi:
-        sweep += 2 * math.pi
-    while sweep > math.pi:
-        sweep -= 2 * math.pi
-    k = max(1, int(math.ceil(abs(math.degrees(sweep)) / 90.0)))
-    sub = sweep / k
-    mag = (4.0 / 3.0) * r * math.tan(abs(sub) / 4.0)
-    nodes = []
-    for s in range(k + 1):
-        ang = pa_ang + sub * s
-        P = (C[0] + r * math.cos(ang), C[1] + r * math.sin(ang))
-        tang = (-math.sin(ang), math.cos(ang))      # unit tangent, +ang sense
-        if sub < 0:
-            tang = (-tang[0], -tang[1])             # travel direction
-        o = (tang[0] * mag, tang[1] * mag) if s < k else (0.0, 0.0)
-        i = (-tang[0] * mag, -tang[1] * mag) if s > 0 else (0.0, 0.0)
-        nodes.append({"v": P, "i": i, "o": o})
-    return nodes, C, P_a, P_b, pa_ang, sweep
-
-
-def _dist_point_to_arc(p, C, r, pa_ang, sweep):
-    """Distance from p to the circular arc (center C, radius r, from pa_ang
-    sweeping `sweep` radians). Within the angular span -> radial distance; past
-    an end -> distance to the nearer endpoint."""
-    ap_ang = math.atan2(p[1] - C[1], p[0] - C[0])
-    rel = ap_ang - pa_ang
-    if sweep >= 0:
-        while rel < 0:
-            rel += 2 * math.pi
-        within = rel <= sweep
-    else:
-        while rel > 0:
-            rel -= 2 * math.pi
-        within = rel >= sweep
-    if within:
-        return abs(length(sub(p, C)) - r)
-    end_a = (C[0] + r * math.cos(pa_ang), C[1] + r * math.sin(pa_ang))
-    end_b = (C[0] + r * math.cos(pa_ang + sweep),
-             C[1] + r * math.sin(pa_ang + sweep))
-    return min(length(sub(p, end_a)), length(sub(p, end_b)))
-
-
-def plan_fillets(verts, seg_w, margin, railA, railB, args):
-    """Per-interior-corner fillet decision + tip-coverage guardian.
-
-    Returns (fillets, report): `fillets` maps a centerline vertex index -> the
-    list of arc nodes that REPLACE that single sharp vertex; `report` is the
-    fillet_report (filleted / left_sharp / tip_clip_samples)."""
-    med_w = median(seg_w) or 1.0
-    fillet_min = args.fillet_min if args.fillet_min else 0.05 * med_w
-    fillets = {}
-    filleted, left_sharp, tip_clips = [], [], []
-    for i in range(1, len(verts) - 1):
-        theta = turn_angle_deg(verts[i - 1], verts[i], verts[i + 1])
-        if theta < args.corner_deg:
-            continue                                 # gentle/straight: skip
-        a = math.radians(theta) / 2.0
-        sec_a = 1.0 / math.cos(a)
-        tan_a = math.tan(a)
-        h_f = (seg_w[i - 1] + seg_w[i]) / 2.0 / 2.0  # local fill half-width
-        h_m = h_f + margin                           # local matte half-width
-        seg_lo = min(length(sub(verts[i], verts[i - 1])),
-                     length(sub(verts[i + 1], verts[i])))
-        r_cov = args.fillet_safety * margin * sec_a / max(sec_a - 1.0, 1e-6)
-        r_seg = args.fillet_seg_frac * seg_lo / max(tan_a, 1e-6)
-        r_safe = min(r_cov, r_seg)
-        r_need = args.fillet_notch_frac * h_m * tan_a
-        if r_safe < max(r_need, fillet_min):
-            left_sharp.append({"i": i, "turn": round(theta, 1),
-                               "reason": "tight", "v": [round(verts[i][0], 2),
-                                                        round(verts[i][1], 2)]})
-            continue                                 # margin can't absorb: stay sharp
-        r_use = clamp(r_need, fillet_min, r_safe)
-        u_prev = norm(sub(verts[i - 1], verts[i]))
-        u_next = norm(sub(verts[i + 1], verts[i]))
-        nodes, C, P_a, P_b, pa_ang, sweep = _arc_nodes(
-            verts[i], u_prev, u_next, r_use, theta)
-        # tip-coverage check: does the matte still reach the convex apex?
-        probe = mul(norm(add(u_prev, u_next)), -1.0)   # outward, toward apex
-        da, fa = point_polyline_nearest(verts[i], railA)
-        db, fb = point_polyline_nearest(verts[i], railB)
-        apex = fa if dot(sub(fa, verts[i]), probe) >= dot(sub(fb, verts[i]),
-                                                          probe) else fb
-        dist = _dist_point_to_arc(apex, C, r_use, pa_ang, sweep)
-        if dist > h_m + 0.5 * margin:
-            left_sharp.append({"i": i, "turn": round(theta, 1),
-                               "reason": "apex-clip",
-                               "v": [round(verts[i][0], 2), round(verts[i][1], 2)]})
-            tip_clips.append([round(apex[0], 2), round(apex[1], 2)])
-            continue
-        fillets[i] = nodes
-        filleted.append({"i": i, "turn": round(theta, 1),
-                         "radius": round(r_use, 3),
-                         "v": [round(verts[i][0], 2), round(verts[i][1], 2)],
-                         "center": [round(C[0], 2), round(C[1], 2)],
-                         "tangent_a": [round(P_a[0], 2), round(P_a[1], 2)],
-                         "tangent_b": [round(P_b[0], 2), round(P_b[1], 2)]})
-    report = {"filleted": filleted, "left_sharp": left_sharp,
-              "tip_clip_samples": tip_clips}
-    return fillets, report
-
-
-def route_nodes(verts, fillets):
-    """Centerline-order list of {"v","i","o"} nodes, with filleted corners
-    expanded into their arc nodes and every other vertex kept sharp (i/o=0)."""
-    out = []
-    for j in range(len(verts)):
-        if j in fillets:
-            out.extend({"v": (nd["v"][0], nd["v"][1]),
-                        "i": (nd["i"][0], nd["i"][1]),
-                        "o": (nd["o"][0], nd["o"][1])} for nd in fillets[j])
-        else:
-            out.append({"v": (verts[j][0], verts[j][1]),
-                        "i": (0.0, 0.0), "o": (0.0, 0.0)})
-    return out
-
-
-def nodes_to_d(nodes):
-    """SVG path `d` for a node list: straight runs as L, filleted arcs as C."""
-    if not nodes:
-        return ""
-    d = [f"M{nodes[0]['v'][0]},{nodes[0]['v'][1]}"]
-    for k in range(1, len(nodes)):
-        A, B = nodes[k - 1], nodes[k]
-        if A["o"] == (0.0, 0.0) and B["i"] == (0.0, 0.0):
-            d.append(f"L{B['v'][0]},{B['v'][1]}")
-        else:
-            c1 = (A["v"][0] + A["o"][0], A["v"][1] + A["o"][1])
-            c2 = (B["v"][0] + B["i"][0], B["v"][1] + B["i"][1])
-            d.append(f"C{c1[0]:.3f},{c1[1]:.3f} {c2[0]:.3f},{c2[1]:.3f} "
-                     f"{B['v'][0]},{B['v'][1]}")
-    return " ".join(d)
-
-
-def reverse_nodes(nodes):
-    """Reverse a node list for the opposite reveal direction (swap i<->o)."""
-    return [{"v": nd["v"], "i": nd["o"], "o": nd["i"]} for nd in nodes[::-1]]
-
-
-def extend_node_caps(nodes, start_half, end_half):
-    """Push the two terminal vertices outward along their own segment by half the
-    local matte width (mirror of _extend_caps, preserving tangents). Terminal
-    nodes are caps with zero tangents, so only `v` moves."""
-    v = [dict(nd) for nd in nodes]
-    if len(v) >= 2:
-        for end, nb, h in ((0, 1, start_half), (-1, -2, end_half)):
-            dx = v[end]["v"][0] - v[nb]["v"][0]
-            dy = v[end]["v"][1] - v[nb]["v"][1]
-            L = math.hypot(dx, dy) or 1.0
-            v[end] = {"v": (round(v[end]["v"][0] + dx / L * h, 3),
-                            round(v[end]["v"][1] + dy / L * h, 3)),
-                      "i": v[end]["i"], "o": v[end]["o"]}
-    return v
-
-
-def nodes_to_shape(nodes):
-    """Lottie sh ks.k dict {v,i,o,c:false} from a node list."""
-    return {
-        "v": [[round(nd["v"][0], 3), round(nd["v"][1], 3)] for nd in nodes],
-        "i": [[round(nd["i"][0], 3), round(nd["i"][1], 3)] for nd in nodes],
-        "o": [[round(nd["o"][0], 3), round(nd["o"][1], 3)] for nd in nodes],
-        "c": False,
-    }
 
 
 # ---------- flat coverage overlay ----------
@@ -698,23 +503,20 @@ def _poly_d(pts):
 
 def write_coverage_svg(path, poly, railA, railB_rev, capA, capB, centerline_verts,
                        matte_order, widths_ordered, single_width, single_mode,
-                       report, containment, linecap, footprint_nodes, fillet_report,
-                       notch_risk=()):
+                       report, containment, linecap, notch_risk=()):
     """Flat, dev-server-free, HONEST proof of the matte footprint.
 
     The footprint is drawn exactly as production strokes it — the cap-extended
     reveal order, the DECIDED linecap (butt for sharp marks, round for curved),
-    filleted corners as real arcs, miter joins clamped to the production limit
-    (ml:8) — then the fill is painted opaque white ON TOP so the only footprint
-    that survives is what pokes OUTSIDE the fill. So the eye sees just the spill,
-    coloured by what it means:
-      - amber   = matte over background (cosmetic; a track matte reveals nothing
-                  there),
-      - red     = matte reaching another limb's fill (a real defect),
-                  from containment_report.bleed_samples,
-      - yellow  = convex-corner (ambiguous) balance samples,
-      - magenta = apex clip — a fillet would round the settled corner (rejected),
-      - green   = corner filleted; grey = corner left sharp.
+    miter joins clamped to the production limit (ml:8) — then the fill is painted
+    opaque white ON TOP so the only footprint that survives is what pokes OUTSIDE
+    the fill. So the eye sees just the spill, coloured by what it means:
+      - amber  = matte over background (cosmetic; a track matte reveals nothing
+                 there),
+      - red    = matte reaching another limb's fill (a real defect),
+                 from containment_report.bleed_samples,
+      - yellow = convex-corner (ambiguous) balance samples,
+      - grey   = notch-risk corner (transient butt-cap notch; settled stays sharp).
     A one-line legend prints the worst over-reach so the picture and the JSON
     agree at a glance. This is what makes 'is it contained?' answerable by eye
     instead of looking 2x the shape because of harmless overhang + miter spikes."""
@@ -740,14 +542,12 @@ def write_coverage_svg(path, poly, railA, railB_rev, capA, capB, centerline_vert
                   f'stroke-linecap="{cap_name}" stroke-linejoin="miter" '
                   f'stroke-miterlimit="8"')
         if single_mode:
-            # real production route: filleted arcs included (nodes_to_d emits C)
-            out.append(f'<path d="{nodes_to_d(footprint_nodes)}" {common} '
+            out.append(f'<polyline points="{_pl(matte_order)}" {common} '
                        f'stroke-width="{single_width:.2f}"/>')
         else:
-            vpts = [nd["v"] for nd in footprint_nodes]
-            for k in range(len(vpts) - 1):
+            for k in range(len(matte_order) - 1):
                 wseg = widths_ordered[min(k, len(widths_ordered) - 1)]
-                out.append(f'<polyline points="{_pl([vpts[k], vpts[k + 1]])}" '
+                out.append(f'<polyline points="{_pl([matte_order[k], matte_order[k + 1]])}" '
                            f'{common} stroke-width="{wseg:.2f}"/>')
         return out
 
@@ -787,35 +587,15 @@ def write_coverage_svg(path, poly, railA, railB_rev, capA, capB, centerline_vert
             cx, cy = r["p"]
             p.append(f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{ring:.2f}" '
                      f'fill="none" stroke="#f2c400" stroke-width="{thin:.2f}"/>')
-    # 8. corner decisions: green ring = filleted, grey dot = left-sharp / notch-risk,
-    #    magenta cross = apex clip (a fillet there would round the settled mark)
-    nfil = nsharp = nclip = 0
-    if fillet_report:
-        for fc in fillet_report.get("filleted", []):
-            cx, cy = fc["v"]
-            p.append(f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{ring * 1.1:.2f}" '
-                     f'fill="none" stroke="#11a911" stroke-width="{bright:.2f}"/>')
-            nfil += 1
-        for sc in fillet_report.get("left_sharp", []):
-            cx, cy = sc["v"]
-            p.append(f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{ring * 0.6:.2f}" '
-                     f'fill="#888888"/>')
-            nsharp += 1
-        for cx, cy in fillet_report.get("tip_clip_samples", []):
-            d = ring
-            p.append(f'<path d="M{cx - d:.2f},{cy - d:.2f} L{cx + d:.2f},{cy + d:.2f} '
-                     f'M{cx - d:.2f},{cy + d:.2f} L{cx + d:.2f},{cy - d:.2f}" '
-                     f'stroke="#d400d4" stroke-width="{bright:.2f}"/>')
-            nclip += 1
-    else:
-        # default run (fillet stage off): mark notch-risk corners grey so the required
-        # SVG proof still shows where the butt cap transiently notches (settled stays
-        # sharp). Empty under a round cap, which sweeps crossings notch-free.
-        for i in notch_risk:
-            cx, cy = centerline_verts[i]
-            p.append(f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{ring * 0.6:.2f}" '
-                     f'fill="#888888"/>')
-            nsharp += 1
+    # 8. notch-risk corners (grey dots): sharp interior corners that show a transient
+    #    butt-cap notch as the reveal frontier crosses them (the settled mark stays
+    #    sharp). Empty under a round cap, which sweeps the crossings notch-free.
+    nsharp = 0
+    for i in notch_risk:
+        cx, cy = centerline_verts[i]
+        p.append(f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{ring * 0.6:.2f}" '
+                 f'fill="#888888"/>')
+        nsharp += 1
     # 9. legend so the picture and the JSON reconcile
     wc = containment["worst_case"]
     nbleed = len(containment["bleed_samples"])
@@ -824,13 +604,11 @@ def write_coverage_svg(path, poly, railA, railB_rev, capA, capB, centerline_vert
     p.append(f'<text x="{lx:.2f}" y="{ly:.2f}" font-family="sans-serif" '
              f'font-size="{fs:.2f}" fill="#222">'
              f'cap lc:{linecap} ({cap_name}) | worst over-reach {wc["over_reach"]} '
-             f'({wc["kind"]}) | bleed {nbleed} | fillet {nfil} notch-risk {nsharp} '
-             f'apex-clip {nclip}</text>')
+             f'({wc["kind"]}) | bleed {nbleed} | notch-risk {nsharp}</text>')
     p.append(f'<text x="{lx:.2f}" y="{ly + fs * 1.25:.2f}" font-family="sans-serif" '
              f'font-size="{fs * 0.85:.2f}" fill="#666">'
              f'amber = over background (cosmetic) | red = cross-limb bleed (defect) | '
-             f'green = filleted | grey = notch-risk (transient butt-cap notch) | '
-             f'magenta = apex clip — a fillet would round the settled corner (rejected)'
+             f'grey = notch-risk (transient butt-cap notch under the butt cap)'
              f'</text>')
     p.append('</svg>')
     with open(path, "w") as f:
@@ -874,21 +652,6 @@ def main():
     ap.add_argument("--out", default="centerline.json")
     ap.add_argument("--corner-deg", type=float, default=25.0,
                     help="turn angle (deg) counted as a sharp corner")
-    ap.add_argument("--fillet", action="store_true", dest="fillet",
-                    help="OPT-IN: enable the margin-bounded corner-fillet stage "
-                         "(off by default; only helps generous-margin polygonal marks "
-                         "where the matte margin can absorb a de-notching arc)")
-    ap.add_argument("--fillet-safety", type=float, default=0.7,
-                    dest="fillet_safety",
-                    help="k_safe: fraction of the apex-coverage radius to allow")
-    ap.add_argument("--fillet-seg-frac", type=float, default=0.35,
-                    dest="fillet_seg_frac",
-                    help="max fillet arc reach as a fraction of the shorter segment")
-    ap.add_argument("--fillet-notch-frac", type=float, default=0.5,
-                    dest="fillet_notch_frac",
-                    help="target fillet radius for erasing the butt-cap notch")
-    ap.add_argument("--fillet-min", type=float, default=0.0, dest="fillet_min",
-                    help="min fillet radius (0 => derive 0.05*median(seg_w))")
     ap.add_argument("--linecap", choices=["auto", "butt", "round"], default="auto",
                     help="matte stroke cap: auto (butt for sharp, round for curved), "
                          "or force butt/round")
@@ -982,28 +745,13 @@ def main():
               "— reconsider the route or drop to a per-section matte instead of "
               "widening blindly.")
 
-    # ---- corner fillet stage (margin-bounded, apex-safe) ----
-    # Runs only for polygonal marks and only when enabled. Gentle corners get a
-    # bounded fillet that erases the transient butt-cap notch while a tip-coverage
-    # check proves the convex apex stays covered; sharp corners the margin can't
-    # absorb are LEFT SHARP and reported (never auto-rounded).
-    fillets, fillet_report = {}, None
-    if args.fillet and polygonal:
-        fillets, fillet_report = plan_fillets(verts, seg_w, margin, railA, railB, args)
-        print(f"fillets: {len(fillet_report['filleted'])} filleted, "
-              f"{len(fillet_report['left_sharp'])} left sharp "
-              f"({len(fillet_report['tip_clip_samples'])} apex-clip rejected)")
-        if fillet_report["tip_clip_samples"]:
-            print("WARNING: tip-coverage rejected a fillet (apex-clip) — corner "
-                  "left sharp; a fillet there would round the settled mark.")
-
-    # ---- cap decision (content-class) + notch-risk diagnostic (ALWAYS emitted) ----
-    # Cheap, and it drives the agent's "offer a rounded reveal as a revision" behaviour,
-    # so it runs on every polygonal mark whether or not the opt-in fillet stage ran.
+    # ---- cap decision (content-class) + notch-risk diagnostic ----
+    # The cap choice and the notch-risk list are cheap and drive the agent's "offer a
+    # rounded reveal as a revision" behaviour, so they run on every polygonal mark.
     _lc_override = {"butt": 1, "round": 2}.get(args.linecap)   # None when auto
     if not polygonal:
         linecap = 2
-        cap_reason = "curved mark: round terminals (pen-style); filleting N/A"
+        cap_reason = "curved mark: round terminals (pen-style)"
     elif _lc_override in (1, 2):
         linecap = _lc_override
         cap_reason = "user override"
@@ -1011,11 +759,10 @@ def main():
         linecap = 1
         cap_reason = "sharp mark: butt terminals (miter join keeps settled corners sharp)"
     # Corners that show a transient butt-cap notch as the reveal frontier crosses them:
-    # every sharp interior corner not de-notched by an (opt-in) fillet. Empty under a
-    # round cap (lc:2), which sweeps crossings notch-free.
+    # every sharp interior corner. Empty under a round cap (lc:2), which sweeps the
+    # crossings notch-free.
     notch_risk = ([i for i in range(1, len(verts) - 1)
-                   if turn_angle_deg(verts[i - 1], verts[i], verts[i + 1]) >= args.corner_deg
-                   and i not in fillets]
+                   if turn_angle_deg(verts[i - 1], verts[i], verts[i + 1]) >= args.corner_deg]
                   if linecap == 1 else [])
     print(f"cap_decision: lc:{linecap} ({cap_reason}); notch_risk_corners={notch_risk}")
 
@@ -1051,18 +798,7 @@ def main():
         return v
     matte_order_capext = _extend_caps(matte_order, widths_ordered)
 
-    # filleted route: centerline-order nodes with fillet arcs, then reveal order
-    # (i<->o swapped on reversal) + cap extension. matte_vertex_order(_raw) above
-    # stay flat point lists (unchanged); matte_shape carries the bezier tangents.
-    cl_nodes = route_nodes(verts, fillets)
-    shape_nodes = cl_nodes if start_is_A else reverse_nodes(cl_nodes)
-    shape_nodes = extend_node_caps(shape_nodes, widths_ordered[0] / 2.0,
-                                   widths_ordered[-1] / 2.0)
-    matte_shape = nodes_to_shape(shape_nodes)
-
     d_out = "M" + " L".join(f"{x},{y}" for (x, y) in verts)
-    if fillets:
-        d_out = nodes_to_d(cl_nodes)
     out = {
         "method": method,
         "centerline_vertices": verts,
@@ -1123,12 +859,10 @@ def main():
         },
     }
 
-    # cap_decision (+ notch_risk) is emitted ALWAYS so the default sharp run still tells
-    # the agent which corners would notch — the trigger to OFFER --linecap round. The
-    # default matte GEOMETRY (matte_vertex_order + matte_linecap) is unchanged vs the
-    # pre-fillet route; cap_decision is purely additive. The heavier fillet outputs stay
-    # gated: matte_shape only when >=1 corner is actually filleted, fillet_report only
-    # when the opt-in --fillet stage ran.
+    # cap_decision (+ notch_risk) records the content-class cap choice and the corners
+    # that show a transient butt-cap notch — the trigger for the agent to OFFER
+    # --linecap round as a revision. It never changes the matte geometry
+    # (matte_vertex_order + matte_linecap); it is purely a diagnostic.
     out["route_decision"]["cap_decision"] = {
         "value": linecap,
         "reason": cap_reason,
@@ -1136,13 +870,9 @@ def main():
         "note": ("matte_linecap/cap_decision are authoritative over any legacy lc:2 "
                  "phrasing in the notes above. Corners in notch_risk_corners show a "
                  "transient frontier notch under the butt cap; the settled frame stays "
-                 "sharp (miter join). OFFER lc:2 (round cap), or the opt-in --fillet "
-                 "stage, as a revision only if that transient matters for this mark."),
+                 "sharp (miter join). OFFER lc:2 (round cap) as a revision only if that "
+                 "transient matters for this mark."),
     }
-    if fillets:
-        out["route_decision"]["matte_shape"] = matte_shape
-    if fillet_report is not None:
-        out["fillet_report"] = fillet_report
 
     with open(args.out, "w") as f:
         json.dump(out, f, indent=2)
@@ -1151,8 +881,7 @@ def main():
                             "centerline.svg")
     write_coverage_svg(svg_path, poly, railA, railB_rev, capA, capB, verts,
                        matte_order_capext, widths_ordered, recommended_matte_width,
-                       single_mode, report, containment, linecap, shape_nodes,
-                       fillet_report, notch_risk)
+                       single_mode, report, containment, linecap, notch_risk)
 
     print(f"\nmethod: {method}")
     print(f"centerline vertices: {len(verts)}")

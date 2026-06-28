@@ -24,10 +24,11 @@ pairing** — not a raster skeleton, not a guessed route.
    - `route_decision.matte_vertex_order` → the matte polyline (`c:false`),
    - if `width_decision` is `single-width` → `recommended_matte_width` (one fixed stroke);
      if `per-section` → `matte_width_profile[i]` per section (one open sub-path each),
-   - set `lc:2` (round cap), `lj:1` (miter join), `ml:8` for sharp marks — the round cap sweeps interior corner/fold crossings without a notch and rounds only the moving frontier (the miter join keeps the settled mark sharp); the route is cap-extended so the round start/end disc blooms over background (clipped) and still covers each cap, avoiding the frame-1 square-cap bloom,
+   - use `route_decision.matte_linecap` + `cap_decision` (butt `lc:1` for sharp/polygonal, round `lc:2` for curved/handwriting or `--linecap round`), `lj:1` (miter join), `ml:8` — the margin-bounded fillet stage de-notches gentle corners so the butt cap keeps the settled mark sharp; the route may include filleted (béziered) corners, so when `route_decision.matte_shape` is present copy its `v`/`i`/`o` verbatim and keep them; the route is cap-extended so the terminal blooms over background (clipped) and still covers each cap, avoiding the frame-1 square-cap bloom,
    - assert the Trim `e` value runs **0 → 100** with the first vertex at the start cap, and inspect the corner-crossing frames (frontier passing each sharp fold) — a clean settled frame is not proof they are notch-free.
    If `centerline.svg` shows red bleed or heavy spill, switch to the per-section matte or
-   reconsider the route — do not widen and hope.
+   reconsider the route — do not widen and hope. **Any magenta** (apex-clip) means a fillet was
+   rejected for clipping the settled apex — never ship it, and never loosen the check to pass it.
 5. A separate Lottie debug *scene* is optional richer proof; `centerline.svg` is the
    required human-verification artifact and is never substituted by the Lottie scene.
 
@@ -47,10 +48,17 @@ pairing** — not a raster skeleton, not a guessed route.
   `containment_report` (`worst_case`, `bleed_samples[]`, `overhang_samples_count`),
   `max_balance_imbalance`, `caps`, `railA_outer`, `railB_inner`, `balance_report[]`
   (with `seg`/`left_foot`/`right_foot`/`ambiguous`), and `route_decision` (with
-  `reveal_span: [0,100]` and the 0→100 trim note).
+  `matte_linecap`, `cap_decision`, `reveal_span: [0,100]`, the 0→100 trim note, and —
+  when corners are filleted — `matte_shape` `{v,i,o,c:false}`).
+- Runs a **margin-bounded corner-fillet stage** on polygonal marks (skip with `--no-fillet`):
+  de-notches gentle corners so the cap can stay **butt** (`lc:1`), gated by a tip-coverage
+  check that leaves a corner sharp rather than round the settled apex. Reports `fillet_report`
+  (`filleted` / `left_sharp` / `tip_clip_samples`) and decides the cap by content class
+  (butt for sharp/polygonal, round for curved/handwriting; override with `--linecap`).
 - Emits `centerline.svg` on **every run** next to the JSON: a flat coverage overlay
-  (filled contour, rails+caps, the matte footprint stroked at its actual width, the
-  centerline, **red bleed stretches**, yellow ambiguous rings). Opens with no dev server.
+  (filled contour, rails+caps, the matte footprint stroked with the **decided cap** and
+  filleted arcs, the centerline, **red bleed stretches**, yellow ambiguous rings, **green
+  filleted / grey left-sharp / magenta apex-clip** corner markers). Opens with no dev server.
 
 ## When NOT to use it
 

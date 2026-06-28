@@ -294,29 +294,37 @@ These find a center skeleton, but they are a **fallback, not the main move**.
   ε** so the matte stays continuous (a step at the join can flash a gap during the reveal).
   All sub-paths share **one coordinated Trim** so the reveal reads as a single frontier
   (see `scripts/centerline/build_matte_snippet.md`).
-- **Sharp polygonal marks → exact Lottie values: `"lc": 2` (round cap), `"lj": 1`
-  (miter join), `"ml": 8`.** **Cap and join are separate decisions — do not conflate
-  them.** The matte is a *track matte* over the sharp fill, so the **join** governs the
-  *settled* mark and the **cap** governs only the *moving reveal frontier*:
+- **Cap is a DECISION, not a constant — read `route_decision.matte_linecap` + `cap_decision`.**
+  **Cap and join are separate decisions — do not conflate them.** The matte is a *track matte*
+  over the sharp fill, so the **join** governs the *settled* mark and the **cap** governs only
+  the *moving reveal frontier*:
   - **Join stays miter (`lj:1`).** Never `"lj": 2` (round join) on a sharp mark — a round
     join rounds the *settled* artwork (the rounded-mask regression). This ban is real and
     unchanged.
-  - **Cap is round (`lc:2`), not butt or square.** As the Trim frontier crosses an interior
-    corner/fold, the leading cap is perpendicular to the *local* tangent and cannot match
-    both segment directions at once. A flat **butt** cap (`lc:1`) leaves a hard step — a
-    transient **zigzag/notch** in the corner pocket — that scales with ½·width·tan(turn/2),
-    so a wide matte makes it obvious. A **round** cap sweeps the corner as a smooth moving
-    front with no step. Because the matte only reveals the fill, the round cap rounds *only
-    the frontier*; the **settled mark stays 100% sharp** (it is the sharp fill). This is the
-    opposite of a round join, and is **not** the rounded-mask regression.
-  - **Round, not square, at the start:** a square cap (`lc:3`) projects half the width past
-    the start vertex the moment Trim leaves 0, blooming a full-width blob at frame 1 (reads
-    as "reveal starts at ~5–10%"). The solver emits a **cap-extended** `matte_vertex_order`
-    (pushed out half a width at each end); the round cap's start/end disc then blooms over
-    *background* (clipped, invisible), so the reveal still grows from a point and each cap is
-    still fully covered. A round cap reaches no further than a butt cap, so it never worsens
-    bleed — the containment pass still governs tight folds. (`lc`: 1=butt, 2=round, 3=square;
+  - **Cap defaults to butt (`lc:1`) for sharp/polygonal marks.** As the Trim frontier crosses
+    an interior corner/fold, the leading cap is perpendicular to the *local* tangent and
+    cannot match both segment directions, so a flat **butt** cap leaves a transient
+    **zigzag/notch** (≈ ½·width·tan(turn/2)). The solver's **margin-bounded fillet stage**
+    removes that notch on every corner the tight matte margin can absorb — keeping the cap
+    butt and the settled apex 100% sharp. A corner the margin can't absorb is left sharp and
+    listed in `cap_decision.notch_risk_corners`; its transient notch is accepted, not
+    auto-fixed.
+  - **Cap defaults to round (`lc:2`) only for curved/handwriting marks** (pen-style terminals),
+    or on explicit user request. A round cap sweeps interior crossings smoothly and, because
+    the matte only reveals the fill, rounds *only the frontier* — the settled mark stays sharp.
+    It remains the opt-in tool for a transient notch the user wants gone (`--linecap round`),
+    but is no longer the default for sharp marks.
+  - **Never square (`lc:3`) at the start:** a square cap projects half the width past the start
+    vertex the moment Trim leaves 0, blooming a full-width blob at frame 1 (reads as "reveal
+    starts at ~5–10%"). The solver emits a **cap-extended** `matte_vertex_order` (pushed out
+    half a width at each end); a butt or round cap's terminal then sits over *background*
+    (clipped, invisible), so the reveal still grows from a point and each cap is fully covered.
+    Neither butt nor round reaches further than the fill, so caps never worsen bleed — the
+    containment pass still governs tight folds. (`lc`: 1=butt, 2=round, 3=square;
     `lj`: 1=miter, 2=round, 3=bevel.)
+  - **Filleted corners carry bezier tangents.** When the fillet stage fires,
+    `route_decision.matte_shape` is the production `sh` `ks.k` (`v`/`i`/`o`/`c:false`) with
+    non-zero `i`/`o` at filleted corners — copy it verbatim; do not re-flatten to a polyline.
 - Keep driver coordinates in the **source viewBox/coordinate space** so the matte
   registers with the fill; do not rescale the centerline independently of the fill.
 - If a renderer cannot honor miter/square, compensate by path placement and stable
@@ -406,11 +414,16 @@ Before shipping a shape-following reveal from a filled mark, confirm:
   corners are flagged `ambiguous`.
 - **Route:** `route_decision` (start cap + vertex order) is recorded and matches the
   rendered reveal direction.
-- **Matte stroke:** `lc:2` (round cap) + cap-extended `matte_vertex_order`, `lj:1, ml:8`
-  for sharp marks (round **cap** sweeps corner crossings clean and rounds only the moving
-  frontier, never the settled mark; **never `lj:2`** round join — that rounds the settled
-  mark; not `lc:3` — square blooms at frame 1); width fixed (`"a":0`), no width keyframes;
-  coords in the source viewBox space.
+- **Matte stroke:** read `route_decision.matte_linecap` + `cap_decision` (butt `lc:1` for
+  sharp/polygonal, round `lc:2` for curved/handwriting or `--linecap round`) + cap-extended
+  `matte_vertex_order`, `lj:1, ml:8`; **never `lj:2`** round join (rounds the settled mark);
+  not `lc:3` (square blooms at frame 1); width fixed (`"a":0`), no width keyframes; coords in
+  the source viewBox space. If `route_decision.matte_shape` is present, copy its `v`/`i`/`o`
+  verbatim (filleted corners) instead of re-flattening to a polyline.
+- **Fillets:** `fillet_report.tip_clip_samples` is empty (no magenta on `centerline.svg`) — a
+  fillet that would round the settled apex was rejected, never shipped; and
+  `cap_decision.notch_risk_corners` is a conscious accept (or the user opted into `--linecap
+  round`).
 - **Frontier at corners:** the corner-crossing frames (frontier passing each sharp fold)
   are rendered and clean — no transient notch. A clean settled frame is not proof.
 - **Width decision:** `width_spread` reported and the width decision recorded —
@@ -454,12 +467,21 @@ Before shipping a shape-following reveal from a filled mark, confirm:
 - Oversized matte width as the only proof.
 - Animated stroke-width compensation for poor path placement.
 - **Round joins** on a sharp polygonal matte (`lj:2`) — they round the *settled* mark
-  (the rounded-mask regression). Note this bans the *join*, not the *cap*: a round **cap**
-  (`lc:2`) on the reveal matte is **required** for sharp folds (it rounds only the moving
-  frontier, never the settled mark) — do not mislabel it as the regression. Filleting the
-  centerline driver to "fix" the corner notch is also wrong: it relocates the flat-cap step
-  rather than removing it, and pulls the matte outline back from the fill's sharp tip so the
-  track matte under-covers the corner — making the *settled* corners look rounded.
+  (the rounded-mask regression). This bans the *join*, not the *cap*: a round **cap**
+  (`lc:2`) on the reveal matte rounds only the moving frontier, never the settled mark, so it
+  is a legitimate opt-in tool for a transient notch — it is just no longer the default (butt
+  is; see Matte Stroke Rules).
+- **An UNBOUNDED fillet on the centerline driver** — a fillet is a regression **only** when it
+  pulls the matte off the fill's convex apex: with radius large relative to the over-coverage
+  margin, the matte under-covers the corner and the *settled* mark looks rounded. It is **not**
+  a regression in general. A **margin-bounded** fillet on a gentle corner, gated by the
+  measured **tip-coverage check** (the solver's `plan_fillets` + `fillet_report`), is the
+  supported way to keep a **butt** cap notch-free without ever rounding the settled apex. A
+  sharp corner whose tight margin can't absorb a notch-erasing fillet is **left sharp** (the
+  transient frontier notch is accepted and reported in `cap_decision.notch_risk_corners`) — it
+  is NOT auto-rounded and NOT auto-round-capped. Shipping a fillet the tip-coverage check
+  rejected (`fillet_report.tip_clip_samples` non-empty / magenta on `centerline.svg`) is the
+  regression; loosening the check to pass it is the wrong fix.
 - Shipping a sharp-fold reveal without inspecting the corner-crossing frames (a clean
   settled frame is not proof the moving frontier is clean).
 - Declaring rail pairing "unreliable" because of unequal rail lengths or a

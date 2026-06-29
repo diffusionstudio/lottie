@@ -276,5 +276,73 @@
       "carry the derived driver route into the production scene where the original filled artwork stays visible, not the debug route",
       "finish the production Lottie cleanly rather than stopping at the sandbox"
     ]
+  },
+  {
+    "query": "Animate this 'hello' as handwritten text that draws itself on.",
+    "source_asset": "an SVG with open stroked paths (fill=none + stroke, no Z) — the stroke is the visible art",
+    "must_read": [
+      "references/player-contract.md",
+      "references/single-line-redraw.md",
+      "references/recipe-typography.md",
+      "references/svg-compatibility.md",
+      "references/motion-taste.md"
+    ],
+    "may_read": [
+      "references/design-taste.md"
+    ],
+    "must_not_read": [
+      "references/single-line-vectorization.md",
+      "references/recipe-product-promo.md"
+    ],
+    "expected_behavior": [
+      "classify as REDRAW reuse because the source has open stroked paths (the stroke is the visible art)",
+      "do not run the geometry sandbox or derive_rails.py",
+      "reuse the existing stroke paths, preserving Beziers/tangents (do not flatten to dense polylines)",
+      "emit one visible stroke + Trim Paths layer per pen stroke (h, then ello), staggered L-to-R",
+      "no track matte (no td/tt) and no fill layer underneath; round cap lc:2 and round join lj:2"
+    ]
+  },
+  {
+    "query": "Make my signature animate like it's being handwritten.",
+    "source_asset": "a filled signature SVG (fill, has Z, no stroke)",
+    "must_read": [
+      "references/player-contract.md",
+      "references/single-line-redraw.md",
+      "references/recipe-typography.md",
+      "references/svg-compatibility.md",
+      "references/motion-taste.md"
+    ],
+    "may_read": [
+      "references/design-taste.md"
+    ],
+    "must_not_read": [
+      "references/single-line-vectorization.md",
+      "references/recipe-product-promo.md"
+    ],
+    "expected_behavior": [
+      "classify as REDRAW stroke-data-required because the visible stroke is the art but the only source is a fill",
+      "explain a fill cannot be reliably inverted to one ordered pen path; request single-line/stroke source",
+      "do not silently hand the fill to the mask-reveal solver or build a track matte",
+      "offer the gated skeleton-traversal attempt only with the explicit review-draw-order caveat"
+    ]
+  },
+  {
+    "query": "Animate this wordmark by revealing it like handwriting.",
+    "source_asset": "a filled wordmark, intent ambiguous (redraw vs reveal-of-fill)",
+    "must_read": [
+      "references/player-contract.md"
+    ],
+    "may_read": [
+      "references/single-line-redraw.md",
+      "references/single-line-vectorization.md"
+    ],
+    "must_not_read": [
+      "references/recipe-product-promo.md"
+    ],
+    "expected_behavior": [
+      "recognize the prompt is ambiguous between redraw (stroke is the art) and mask-reveal (fill stays visible)",
+      "ask the one clarifying question: should the letters draw themselves on as a moving pen line, or should existing filled artwork be revealed along its shape",
+      "do not silently pick the mask-reveal solver or commit to a single-line redraw before the answer"
+    ]
   }
 ]

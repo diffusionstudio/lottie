@@ -314,5 +314,53 @@
       "references/recipe-svg-animation.md",
       "references/recipe-product-promo.md"
     ]
+  },
+  {
+    "query": "Animate this 'hello' as handwritten text that draws itself on.",
+    "source_asset": "an SVG with open stroked paths (fill=none + stroke, no Z)",
+    "expected_references": [
+      "references/player-contract.md",
+      "references/single-line-redraw.md",
+      "references/recipe-typography.md",
+      "references/svg-compatibility.md",
+      "references/motion-taste.md"
+    ],
+    "primary_recipe": "references/recipe-typography.md",
+    "avoid_references": [
+      "references/single-line-vectorization.md",
+      "references/recipe-product-promo.md"
+    ]
+  },
+  {
+    "query": "Make my signature animate like it's being handwritten.",
+    "source_asset": "a filled signature SVG (fill, no stroke)",
+    "expected_references": [
+      "references/player-contract.md",
+      "references/single-line-redraw.md",
+      "references/recipe-typography.md",
+      "references/svg-compatibility.md",
+      "references/motion-taste.md"
+    ],
+    "primary_recipe": "references/recipe-typography.md",
+    "avoid_references": [
+      "references/single-line-vectorization.md",
+      "references/recipe-product-promo.md"
+    ]
+  },
+  {
+    "query": "Reveal this filled logo along its shape with a path-driven mask.",
+    "source_asset": "a filled ribbon mark (fill stays visible)",
+    "expected_references": [
+      "references/player-contract.md",
+      "references/single-line-vectorization.md",
+      "references/recipe-logo.md",
+      "references/svg-compatibility.md",
+      "references/motion-taste.md"
+    ],
+    "primary_recipe": "references/recipe-logo.md",
+    "avoid_references": [
+      "references/single-line-redraw.md",
+      "references/recipe-product-promo.md"
+    ]
   }
 ]

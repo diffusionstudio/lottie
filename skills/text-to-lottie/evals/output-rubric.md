@@ -32,10 +32,12 @@ normal animation work.
   to transparent output unless the user asks for a background.
 - Slots are type-compatible with their referenced properties.
 - Controls expose useful edits without cluttering the panel.
-- Fixed prompt text is authored as vector/shape artwork without first spending
-  time on native text-slot experiments.
-- Native text slots are reserved for explicitly editable copy after font asset
-  loading has been implemented and verified in the local player.
+- Text scenes ship their font: a `.ttf`/`.otf`/`.ttc` sits next to `lottie.json`,
+  is declared in `fonts.list` with `fFamily` matching the embedded family name,
+  and is referenced from text documents. Native text is preferred over vector
+  text; vector/shape text appears only for deliberate path effects.
+- Text slots are used for copy that should be user-editable, with the font
+  present so it renders.
 
 ## Motion And Design Quality
 

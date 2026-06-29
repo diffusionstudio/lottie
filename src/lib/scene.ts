@@ -12,14 +12,18 @@ export async function loadScene(scene: Scene): Promise<SceneData> {
   }
   const json = await res.text();
 
-  // Fetch image assets keyed by filename, matching the lottie's `assets[].p` values
-  // so MakeManagedAnimation can resolve them.
+  // MakeManagedAnimation takes one named-blob map for both images and fonts.
+  // Images are matched by key (it must equal the lottie's `assets[].p` filename).
+  // Fonts are different: CanvasKit feeds every blob to a custom SkFontMgr and
+  // resolves text layers by each font's *embedded* family name (matched against
+  // the lottie `fonts.list[].fFamily`), so a font's key is arbitrary — we use the
+  // filename only to keep it from colliding with another asset.
   const assets: Record<string, ArrayBuffer> = {};
   await Promise.all(
-    scene.images.map(async (url) => {
-      const imgRes = await fetch(url);
-      if (imgRes.ok) {
-        assets[url.split("/").pop()!] = await imgRes.arrayBuffer();
+    [...scene.images, ...scene.fonts].map(async (url) => {
+      const assetRes = await fetch(url);
+      if (assetRes.ok) {
+        assets[url.split("/").pop()!] = await assetRes.arrayBuffer();
       }
     }),
   );

@@ -40,6 +40,7 @@ public/
         lottie.json
         controls.json
         <image files>
+        <font files>
 ```
 
 - `lottie.json` is required. A scene without it is ignored.
@@ -47,6 +48,8 @@ public/
 - Scene ordering comes from the trailing number in `scene-<N>`.
 - Put image assets next to the scene and reference them by bare filename in
   `assets[].p`, for example `"p": "logo.svg"`.
+- Put font files (`.ttf`, `.otf`, `.ttc`) next to the scene to render native text.
+  The loader passes every scene font to Skottie; see "Native Text" below.
 
 ## Target Scene Policy
 
@@ -155,19 +158,31 @@ Slot value types map to controls:
 
 Slot types must match the properties that reference them.
 
-## Text Rendering Fast Path
+## Native Text
 
-- Native Lottie text layers and text slots are not reliable in this player by
-  default. CanvasKit exposes text slots, but text still needs font data at
-  Skottie animation creation time.
-- The current scene loader passes discovered image assets to
-  `MakeManagedAnimation`; it does not discover or pass scene font files.
-- Local CanvasKit verification showed native text renders transparent without a
-  font blob and renders once the matching font blob is supplied.
-- For fixed prompt text, do not spend time trying native text first. Author text
-  as vector/shape artwork immediately.
-- Use native text slots only when editable text is explicitly required and font
-  asset loading has been implemented and verified in the official player.
+Native Lottie text layers (`ty:5`) and text slots render in this player, as long
+as the scene supplies the font. The loader discovers every `.ttf`/`.otf`/`.ttc`
+file in the scene folder and hands all of them to `MakeManagedAnimation`
+alongside images. Skottie loads those bytes into a font manager and resolves each
+text layer by the font's **embedded family name** — so the contract is:
+
+1. Drop the font file in the scene folder (next to `lottie.json`).
+2. Declare it in the Lottie's top-level `fonts.list`, e.g.
+   `{ "fName": "Inter", "fFamily": "Inter", "fStyle": "Regular", "ascent": 75 }`.
+   `fFamily` must equal the font's real embedded family name (not the filename).
+3. Reference that font from text documents via `f` (matching `fName`).
+
+The font's **filename is irrelevant** to resolution — Skottie matches on the
+embedded family name, not the asset key — but keep it unique within the folder so
+it does not collide with an image. If no matching font is present, the text layer
+renders transparent (the classic "blank text" failure).
+
+- Text slots (editable text in the properties panel) work the same way — the slot
+  still needs the font present. The slot value type for text is a string input.
+- Vector/shape text (baking glyphs to `ty:"sh"` outlines) is no longer required
+  for text to render. Use it only when you deliberately want path-level control
+  (stroke-on reveals, glyph morphs, handwritten traces) — not as a font
+  workaround.
 
 ## Vector Text Vertical Placement
 

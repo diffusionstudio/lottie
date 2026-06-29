@@ -5,6 +5,7 @@ import type { Scene, Project, ScenesTree } from "../src/types/common";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg"]);
+const FONT_EXTENSIONS = new Set([".ttf", ".otf", ".ttc"]);
 
 /** "main-project" -> "Main Project", "scene-1" -> "Scene 1" */
 function titleCase(slug: string): string {
@@ -138,10 +139,11 @@ function scanScene(projectSlug: string, sceneSlug: string, sceneDir: string): Sc
   if (!files.includes("lottie.json")) return null;
 
   const base = `/projects/${projectSlug}/${sceneSlug}`;
-  const images = files
-    .filter((name) => IMAGE_EXTENSIONS.has(path.extname(name).toLowerCase()))
-    .sort()
-    .map((name) => `${base}/${name}`);
+  const byExtension = (extensions: Set<string>) =>
+    files
+      .filter((name) => extensions.has(path.extname(name).toLowerCase()))
+      .sort()
+      .map((name) => `${base}/${name}`);
 
   return {
     slug: sceneSlug,
@@ -149,7 +151,8 @@ function scanScene(projectSlug: string, sceneSlug: string, sceneDir: string): Sc
     order: sceneOrder(sceneSlug),
     lottie: `${base}/lottie.json`,
     controls: files.includes("controls.json") ? `${base}/controls.json` : undefined,
-    images,
+    images: byExtension(IMAGE_EXTENSIONS),
+    fonts: byExtension(FONT_EXTENSIONS),
   };
 }
 

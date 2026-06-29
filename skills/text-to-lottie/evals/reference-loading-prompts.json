@@ -16,8 +16,8 @@
       "references/recipe-product-promo.md"
     ],
     "expected_behavior": [
-      "author fixed text as vector or shape artwork",
-      "do not spend time trying native text slots unless editable text is explicitly required"
+      "use native Lottie text and ship the Inter font file in the scene folder",
+      "declare the font in fonts.list with fFamily matching the embedded family name"
     ]
   },
   {

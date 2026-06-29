@@ -121,11 +121,13 @@ These few defaults are non-negotiable and apply to every designed scene. Load
   when they improve the properties panel.
 - For SVG input, preserve the viewBox, normalize styling, watch fill rules and
   intersections, and verify the result in Skottie.
-- Native Lottie text/text slots are unreliable in this player unless font blobs
-  are supplied to Skottie. The current scene loader discovers image assets only,
-  so author fixed prompt text as vector/shape text immediately. Use native text
-  slots only when editable text is explicitly required and font loading has been
-  implemented and verified.
+- Native Lottie text/text slots (`ty:5`) render in this player when the scene
+  ships its font: drop a `.ttf`/`.otf`/`.ttc` next to `lottie.json`, declare it in
+  `fonts.list` with `fFamily` matching the font's embedded family name, and
+  reference it from text documents. The loader passes every scene font to Skottie.
+  Prefer native text; reach for vector/shape text only for deliberate path effects
+  (stroke-on, glyph morphs, handwriting). See the player-contract "Native Text"
+  reference.
 
 ## Verification
 

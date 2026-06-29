@@ -19,6 +19,8 @@ export interface Scene {
   controls?: string;
   /** Public URLs of image assets in the scene folder. */
   images: string[];
+  /** Public URLs of font files (.ttf/.otf/.ttc) in the scene folder. */
+  fonts: string[];
 }
 
 export interface Project {

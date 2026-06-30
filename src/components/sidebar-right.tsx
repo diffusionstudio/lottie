@@ -158,6 +158,12 @@ export function SidebarRight() {
                           step={m?.step ?? 1}
                           value={value[i]}
                           onChange={(e) => update(i, Number(e.target.value))}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              update(i, Number(e.currentTarget.value));
+                              commitSource();
+                            }
+                          }}
                           onBlur={commitSource}
                           class="rounded-md bg-input font-sans text-foreground outline-none w-0 flex-1 text-xxs h-7 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none px-2 focus-ring"
                         />
@@ -177,6 +183,13 @@ export function SidebarRight() {
                     onChange={(e) => {
                       set(slot.id, e.target.value);
                       setTextSlot(slot.id, e.target.value);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        set(slot.id, e.currentTarget.value);
+                        setTextSlot(slot.id, e.currentTarget.value);
+                        commitSource();
+                      }
                     }}
                     onBlur={commitSource}
                     class="rounded-md bg-input font-sans text-foreground outline-none w-0 flex-1 text-xxs h-7 px-2 focus-ring"

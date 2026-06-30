@@ -200,9 +200,7 @@ export function CanvasProvider(props: { children: JSX.Element }) {
     sourceDirty = true;
   }
 
-  // A text layer binds to a slot via `t.d.sid`. setText() targets a layer by the
-  // key getTextProps() reports (its `nm`), so map a slot id to the bound text
-  // layers' names + sizes from the current source doc.
+  // setText() targets a text layer by name, so map a slot id to its layer(s).
   const textLayersForSlot = (slotId: string): { key: string; size: number }[] => {
     const json = sceneData()?.json;
     if (!json) return [];
@@ -229,13 +227,9 @@ export function CanvasProvider(props: { children: JSX.Element }) {
   const setTextSlot = (id: string, text: string) => {
     const anim = animation();
     if (!anim) return;
-    // canvaskit-wasm 0.41.1's setTextSlot does NOT re-shape the live text layer,
-    // and calling it LOCKS subsequent setText() calls from re-shaping (so only the
-    // first edit to a slot would update live). setText(key, text, size) re-shapes
-    // on every edit AND updates the slot value (getTextSlot reflects it), so
-    // readSlots/applySlotValues still persist correctly on commit. So drive the
-    // preview AND the value through setText only; never call setTextSlot here.
-    // Targets each text layer bound to this slot by its name (the setText key).
+    // Use setText, not setTextSlot: in canvaskit-wasm 0.41.1 setTextSlot doesn't
+    // re-shape the layer and locks later setText calls. setText re-shapes each
+    // edit and updates the slot value, so commit still persists.
     for (const { key, size } of textLayersForSlot(id)) {
       anim.setText(key, text, size);
     }

@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "check:text-slots": "node --experimental-strip-types --test scripts/text-slot-unicode.test.mjs",
     "preview": "vite preview",
     "postinstall": "node scripts/copy-canvaskit.mjs"
   },

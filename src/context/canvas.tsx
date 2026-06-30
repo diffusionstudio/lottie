@@ -4,7 +4,7 @@ import { ControlMeta, AnimationSlot, Scene } from '@/types';
 import { useScenes } from '@/context/scenes';
 import { getCanvasKit } from '@/lib/canvaskit';
 import { loadScene } from '@/lib/scene';
-import { applySlotValues } from '@/lib/lottie';
+import { applySlotValues, readTextSlotValue, type LottieDoc } from '@/lib/lottie';
 import { parseLottieFile, createSceneFromDoc } from '@/lib/import';
 
 import type { CanvasKit, Surface, ManagedSkottieAnimation, Font, Paint, Typeface } from "canvaskit-wasm/full";
@@ -56,12 +56,22 @@ export function CanvasProvider(props: { children: JSX.Element }) {
   const [playing, setPlaying] = createSignal(false);
   const [currentFrame, setCurrentFrame] = createSignal(0);
   const [canvasKit] = createResource(getCanvasKit);
+  const [textOverrides, setTextOverrides] = createSignal<Record<string, string>>({});
   const currentScene = createMemo(() => {
     const { project, scene } = params;
     if (!project || !scene) return null;
     return findScene(project, scene) ?? null;
   });
   const [sceneData, { refetch: refetchScene }] = createResource(currentScene, loadScene);
+  const sourceDoc = createMemo<LottieDoc | null>(() => {
+    const json = sceneData()?.json;
+    if (!json) return null;
+    try {
+      return JSON.parse(json) as LottieDoc;
+    } catch {
+      return null;
+    }
+  });
 
   onMount(() => {
     import.meta.hot?.on("scene:source", (data: { lottie: string }) => {
@@ -87,10 +97,8 @@ export function CanvasProvider(props: { children: JSX.Element }) {
     return ck.MakeManagedAnimation(data.json, data.assets);
   });
   const animationName = createMemo(() => {
-    try {
-      const nm = (JSON.parse(sceneData()?.json ?? "") as { nm?: unknown }).nm;
-      if (typeof nm === "string" && nm.trim()) return nm.trim();
-    } catch { /** ignore */ }
+    const nm = sourceDoc()?.nm;
+    if (typeof nm === "string" && nm.trim()) return nm.trim();
     return "Animation 1";
   });
 
@@ -108,7 +116,12 @@ export function CanvasProvider(props: { children: JSX.Element }) {
 
   const slots = createMemo(() => {
     const anim = animation();
-    return anim ? readSlots(anim) : [];
+    return anim ? readSlots(anim, sourceDoc(), textOverrides()) : [];
+  });
+
+  createEffect(() => {
+    sceneData()?.json;
+    setTextOverrides({});
   });
 
   createEffect(() => {
@@ -202,36 +215,26 @@ export function CanvasProvider(props: { children: JSX.Element }) {
 
   // setText() targets a text layer by name, so map a slot id to its layer(s).
   const textLayersForSlot = (slotId: string): { key: string; size: number }[] => {
-    const json = sceneData()?.json;
-    if (!json) return [];
-    try {
-      const doc = JSON.parse(json) as {
-        layers?: Array<{
-          ty?: number;
-          nm?: string;
-          t?: { d?: { sid?: string; k?: Array<{ s?: { s?: number } }> } };
-        }>;
-      };
-      const out: { key: string; size: number }[] = [];
-      for (const layer of doc.layers ?? []) {
-        if (layer.ty === 5 && layer.nm && layer.t?.d?.sid === slotId) {
-          out.push({ key: layer.nm, size: layer.t?.d?.k?.[0]?.s?.s ?? 0 });
-        }
-      }
-      return out;
-    } catch {
-      return [];
+    const doc = sourceDoc();
+    if (!doc) return [];
+    const out: { key: string; size: number }[] = [];
+    for (const layer of doc.layers ?? []) {
+      if (layer.ty !== 5 || !layer.nm || layer.t?.d?.sid !== slotId) continue;
+      const k = layer.t.d.k;
+      const size = Array.isArray(k) ? k[0]?.s?.s : undefined;
+      out.push({ key: layer.nm, size: typeof size === "number" ? size : 0 });
     }
+    return out;
   };
 
   const setTextSlot = (id: string, text: string) => {
-    const anim = animation();
-    if (!anim) return;
+    setTextOverrides((value) => ({ ...value, [id]: text }));
     // Use setText, not setTextSlot: in canvaskit-wasm 0.41.1 setTextSlot doesn't
     // re-shape the layer and locks later setText calls. setText re-shapes each
-    // edit and updates the slot value, so commit still persists.
+    // edit; commit persists from source JSON plus the override above.
+    const anim = animation();
     for (const { key, size } of textLayersForSlot(id)) {
-      anim.setText(key, text, size);
+      anim?.setText(key, text, size);
     }
     dirty = true;
     sourceDirty = true;
@@ -247,13 +250,13 @@ export function CanvasProvider(props: { children: JSX.Element }) {
     const sceneSlug = params.scene;
     if (!scene || !data || !anim || !project || !sceneSlug) return;
 
-    let doc: Record<string, unknown>;
+    let doc: LottieDoc;
     try {
       doc = JSON.parse(data.json);
     } catch {
       return;
     }
-    applySlotValues(doc, readSlots(anim));
+    applySlotValues(doc, readSlots(anim, doc, textOverrides()));
 
     const res = await fetch("/__scenes/lottie", {
       method: "POST",
@@ -262,6 +265,7 @@ export function CanvasProvider(props: { children: JSX.Element }) {
     });
     if (!res.ok) {
       console.error(`Failed to save lottie source (HTTP ${res.status})`);
+      return;
     }
 
     sourceDirty = false;
@@ -560,10 +564,11 @@ export function useCanvas() {
   return context;
 }
 
-// Snapshot the animation's current slot values. Reads straight off the
-// animation so callers always get the latest edits (the `slots` memo is only
-// recomputed when the animation itself changes).
-function readSlots(anim: ManagedSkottieAnimation): AnimationSlot[] {
+function readSlots(
+  anim: ManagedSkottieAnimation,
+  sourceDoc: LottieDoc | null | undefined,
+  textOverrides: Record<string, string>,
+): AnimationSlot[] {
   const info = anim.getSlotInfo();
   const slots: AnimationSlot[] = [];
   for (const id of info.scalarSlotIDs) {
@@ -582,7 +587,7 @@ function readSlots(anim: ManagedSkottieAnimation): AnimationSlot[] {
     slots.push({ id, type: "vec2", value: v ? [v[0], v[1]] : [0, 0] });
   }
   for (const id of info.textSlotIDs) {
-    slots.push({ id, type: "text", value: anim.getTextSlot(id)?.text ?? "" });
+    slots.push({ id, type: "text", value: textOverrides[id] ?? readTextSlotValue(sourceDoc, id) ?? "" });
   }
   return slots;
 }

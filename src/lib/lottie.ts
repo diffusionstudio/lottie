@@ -1,36 +1,65 @@
 import type { AnimationSlot } from "@/types";
 
-type LottieDoc = {
+type TextDocument = { t?: string; s?: number };
+type TextKeyframe = { s?: TextDocument };
+
+export type LottieDoc = {
+  nm?: unknown;
   slots?: Record<string, { p?: { k?: unknown; p?: { t?: string } } }>;
+  layers?: Array<{
+    ty?: number;
+    nm?: string;
+    t?: { d?: { sid?: string; k?: unknown } };
+  }>;
 };
 
-// Skottie stores a slotted text document at slots[id].p.k[0].s.t (the same
-// keyframed text-document shape a text layer uses). Older scenes used a flat
-// slots[id].p.p.t; we still honour that as a fallback.
-function applyTextSlot(def: { k?: unknown; p?: { t?: string } }, text: string): void {
-  const k = def.k;
-  if (Array.isArray(k) && k[0] && typeof k[0] === "object") {
-    const s = (k[0] as { s?: { t?: string } }).s;
-    if (s) {
-      s.t = text;
-      return;
-    }
+function textDocument(k: unknown): TextDocument | undefined {
+  if (!Array.isArray(k)) return undefined;
+  const first = k[0] as TextKeyframe | undefined;
+  return first?.s;
+}
+
+function boundTextLayers(doc: LottieDoc, slotId: string): NonNullable<LottieDoc["layers"]> {
+  return (doc.layers ?? []).filter((layer) => layer.ty === 5 && layer.t?.d?.sid === slotId);
+}
+
+export function readTextSlotValue(doc: LottieDoc | null | undefined, slotId: string): string | undefined {
+  const slot = doc?.slots?.[slotId]?.p;
+  const slotText = textDocument(slot?.k)?.t;
+  if (typeof slotText === "string") return slotText;
+  if (typeof slot?.p?.t === "string") return slot.p.t;
+
+  for (const layer of boundTextLayers(doc ?? {}, slotId)) {
+    const layerText = textDocument(layer.t?.d?.k)?.t;
+    if (typeof layerText === "string") return layerText;
   }
-  if (def.p) def.p.t = text;
+  return undefined;
+}
+
+export function writeTextSlotValue(doc: LottieDoc, slotId: string, text: string): void {
+  const slot = doc.slots?.[slotId]?.p;
+  const slotDoc = textDocument(slot?.k);
+  if (slotDoc) slotDoc.t = text;
+  if (slot?.p) slot.p.t = text;
+
+  for (const layer of boundTextLayers(doc, slotId)) {
+    const layerDoc = textDocument(layer.t?.d?.k);
+    if (layerDoc) layerDoc.t = text;
+  }
 }
 
 /**
  * Patch a Lottie document's slot definitions with the given slot values.
  * Mutates `doc` in place. Scalar/color/vec2 values live on `slots[id].p.k`;
- * text lives on the slotted text document at `slots[id].p.k[0].s.t`.
+ * text is written to the slot document and its bound layer fallback.
  */
 export function applySlotValues(doc: LottieDoc, slots: AnimationSlot[]): void {
   for (const slot of slots) {
     const def = doc.slots?.[slot.id]?.p;
-    if (!def) continue;
     if (slot.type === "text") {
-      applyTextSlot(def, slot.value);
+      writeTextSlotValue(doc, slot.id, slot.value);
     } else {
+      if (!def) continue;
       def.k = slot.value;
     }
   }

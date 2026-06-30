@@ -186,6 +186,14 @@ renders transparent (the classic "blank text" failure).
   exact string controls layout or timing: code/terminal rows, hand-spaced lists,
   cursor/token offsets, masks, path/morph/per-character reveals, or tiny
   incidental labels.
+- Native editable text slots must use the keyframed text-document shape: layer
+  fallback at `layers[].t.d.k[0].s`, slot binding via `layers[].t.d.sid`, and
+  top-level slot document at `slots[id].p.k[0].s`. The editable string lives at
+  `slots[id].p.k[0].s.t`. Do not author new text slots as `slots[id].p.p.t` or as
+  a direct `slots[id].p.k` text object.
+- If a text slot renders blank, treat it as a malformed slot document or font
+  binding issue first. Verify the slot document matches the layer fallback
+  document before removing primary-copy slots.
 - Vector/shape text (baking glyphs to `ty:"sh"` outlines) is no longer required
   for text to render. Use it only when you deliberately want path-level control
   (stroke-on reveals, glyph morphs, handwritten traces) — not as a font

@@ -207,7 +207,9 @@ export function CanvasProvider(props: { children: JSX.Element }) {
     const current = anim.getTextSlot(id);
     if (!current) return;
     current.text = text;
-    anim.setTextSlot(id, new ck.SlottableTextProperty(current));
+    // canvaskit-wasm 0.41.1 does not expose the SlottableTextProperty
+    // constructor; setTextSlot accepts the mutated property object directly.
+    anim.setTextSlot(id, current);
     dirty = true;
     sourceDirty = true;
   }

@@ -178,7 +178,22 @@ it does not collide with an image. If no matching font is present, the text laye
 renders transparent (the classic "blank text" failure).
 
 - Text slots (editable text in the properties panel) work the same way — the slot
-  still needs the font present. The slot value type for text is a string input.
+  still needs the font present. Use them by default for primary scene copy:
+  headlines, hooks, titles, taglines, CTAs, closing lockups, product/feature
+  names, and short status/result callouts. Centered, self-contained copy is
+  slot-safe; let it re-center after string edits.
+- Decide slotting per text layer. Leave a layer unslotted only when that layer's
+  exact string controls layout or timing: code/terminal rows, hand-spaced lists,
+  cursor/token offsets, masks, path/morph/per-character reveals, or tiny
+  incidental labels.
+- Native editable text slots must use the keyframed text-document shape: layer
+  fallback at `layers[].t.d.k[0].s`, slot binding via `layers[].t.d.sid`, and
+  top-level slot document at `slots[id].p.k[0].s`. The editable string lives at
+  `slots[id].p.k[0].s.t`. Do not author new text slots as `slots[id].p.p.t` or as
+  a direct `slots[id].p.k` text object.
+- If a text slot renders blank, treat it as a malformed slot document or font
+  binding issue first. Verify the slot document matches the layer fallback
+  document before removing primary-copy slots.
 - Vector/shape text (baking glyphs to `ty:"sh"` outlines) is no longer required
   for text to render. Use it only when you deliberately want path-level control
   (stroke-on reveals, glyph morphs, handwritten traces) — not as a font

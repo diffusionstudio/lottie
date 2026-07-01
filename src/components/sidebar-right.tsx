@@ -109,29 +109,28 @@ export function SidebarRight() {
               }
 
               if (slot.type === "color") {
-                const value = valueOf(slot) as [number, number, number, number];
-                const hex = rgbToHex(value);
-                // Label column on the left (plain text), then a field holding the
-                // swatch and its hex. The native picker is overlaid transparently
-                // so the whole field opens it.
+                const rgba = () => valueOf(slot) as [number, number, number, number];
+                const hex = () => rgbToHex(rgba());
+                // The native picker is overlaid transparently so the whole field opens it.
                 return (
                   <Slot label={label}>
                     <label class="relative flex h-7 flex-1 cursor-pointer select-none items-center gap-2 overflow-hidden rounded-md bg-input p-1 focus-ring">
                       <span
                         class="size-5 shrink-0 rounded-sm"
-                        style={{ "background-color": hex }}
+                        style={{ "background-color": hex() }}
                       />
                       <span class="text-xxs uppercase text-foreground">
-                        {hex.replace("#", "")}
+                        {hex().replace("#", "")}
                       </span>
                       <input
                         type="color"
-                        value={hex}
+                        value={hex()}
                         onChange={(e) => {
                           const [r, g, b] = hexToRgb(e.target.value);
-                          const rgba: [number, number, number, number] = [r, g, b, value[3]];
-                          set(slot.id, rgba);
-                          setColorSlot(slot.id, rgba);
+                          const next: [number, number, number, number] = [r, g, b, rgba()[3]];
+                          set(slot.id, next);
+                          setColorSlot(slot.id, next);
+                          commitSource();
                         }}
                         onBlur={commitSource}
                         class="absolute inset-0 h-full w-full cursor-pointer opacity-0"
@@ -158,6 +157,12 @@ export function SidebarRight() {
                           step={m?.step ?? 1}
                           value={value[i]}
                           onChange={(e) => update(i, Number(e.target.value))}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              update(i, Number(e.currentTarget.value));
+                              commitSource();
+                            }
+                          }}
                           onBlur={commitSource}
                           class="rounded-md bg-input font-sans text-foreground outline-none w-0 flex-1 text-xxs h-7 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none px-2 focus-ring"
                         />
@@ -177,6 +182,13 @@ export function SidebarRight() {
                     onChange={(e) => {
                       set(slot.id, e.target.value);
                       setTextSlot(slot.id, e.target.value);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        set(slot.id, e.currentTarget.value);
+                        setTextSlot(slot.id, e.currentTarget.value);
+                        commitSource();
+                      }
                     }}
                     onBlur={commitSource}
                     class="rounded-md bg-input font-sans text-foreground outline-none w-0 flex-1 text-xxs h-7 px-2 focus-ring"

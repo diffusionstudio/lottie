@@ -72,24 +72,10 @@ Generated animations can be used directly as Lottie JSON files or imported into 
 ```
 
 ### React Native
-```typescript
-import LottieView from "lottie-react-native";
 
-export default function Loader() {
-  return (
-    <LottieView
-      source={require("./animation.json")}
-      autoPlay
-      loop
-      style={{ width: 200, height: 200 }}
-    />
-  );
-}
-```
+Use [React Native Skia](https://shopify.github.io/react-native-skia/docs/skottie/) to render Lottie animations via its Skottie module. It supports iOS, Android, and web, and lets you customize animation properties, assets, and typographies at runtime.
 
-Alternatively, [React Native Skia](https://shopify.github.io/react-native-skia/docs/skottie/) can also render Lottie animations via its Skottie module, including on the web. It lets you customize animation properties, assets, and typographies at runtime, and since `Skottie` is a regular Skia drawing, it can be composed into a larger Skia scene alongside shaders, effects, and masks.
-
-```typescript
+```tsx
 import { Skia, Canvas, Skottie, useClock } from "@shopify/react-native-skia";
 import { useDerivedValue } from "react-native-reanimated";
 

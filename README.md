@@ -41,7 +41,7 @@ Provide SVGs, real-world data, or screenshots whenever possible. Results are sig
 Describe timing and movement using motion design language like ease-in, ease-out, and ease-in-out.
 
 ### 3. Think like a camera operator
-Professional motion graphics often rely on camera movement. Include camera pushes, pans, zooms, and rig-like motion in your prompt. The agent can simulate these through group transforms.
+Professional motion graphics often rely on camera movement. Include camera pushes, pans, zooms, and rig-like motion in your prompt.
 
 ### 4. Request the controls you need
 By default, outputs usually only expose a background color control. If you want to customize other properties, explicitly ask the agent to create controls for them.

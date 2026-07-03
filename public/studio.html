@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Text-to-Lottie Studio</title>
+    <style>
+      :root {
+        --bg: #0b0b0d;
+        --panel: #141417;
+        --panel-2: #1b1b1f;
+        --line: #2a2a30;
+        --text: #f4f4f5;
+        --muted: #9a9aa3;
+        --accent: #29c56a;
+        --accent-dim: #1c9a52;
+        --danger: #e5533c;
+        --radius: 14px;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      a { color: var(--accent); }
+      .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 22px 64px; }
+      header { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+      header .mark {
+        width: 34px; height: 34px; border-radius: 9px;
+        background: linear-gradient(135deg, var(--accent), #16794a);
+        display: grid; place-items: center;
+      }
+      header h1 { font-size: 19px; margin: 0; font-weight: 650; letter-spacing: -0.01em; }
+      .sub { color: var(--muted); font-size: 13px; margin: 0 0 24px 46px; }
+      .sub code { background: var(--panel-2); padding: 1px 6px; border-radius: 5px; color: #cfcfd6; }
+
+      .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; }
+      @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 18px;
+      }
+      .card + .card { margin-top: 18px; }
+
+      label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin: 0 0 7px; letter-spacing: 0.02em; text-transform: uppercase; }
+      textarea, input[type=text], input[type=number], select {
+        width: 100%; background: var(--panel-2); color: var(--text);
+        border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+        font: inherit; outline: none; transition: border-color .15s;
+      }
+      textarea:focus, input:focus, select:focus { border-color: var(--accent-dim); }
+      textarea { resize: vertical; min-height: 92px; }
+
+      .drop {
+        border: 1.5px dashed var(--line); border-radius: 12px; padding: 20px;
+        text-align: center; color: var(--muted); cursor: pointer; transition: all .15s;
+        background: var(--panel-2); position: relative;
+      }
+      .drop:hover, .drop.over { border-color: var(--accent-dim); color: var(--text); }
+      .drop svg { opacity: .7; margin-bottom: 6px; }
+      .drop .hint { font-size: 12.5px; }
+      .drop input[type=file] { display: none; }
+      .preview { display: none; margin-top: 12px; align-items: center; gap: 12px; }
+      .preview.show { display: flex; }
+      .preview img {
+        width: 64px; height: 64px; object-fit: contain; border-radius: 8px;
+        background: repeating-conic-gradient(#232329 0% 25%, #1a1a1e 0% 50%) 50% / 16px 16px;
+        border: 1px solid var(--line);
+      }
+      .preview .fname { font-size: 13px; color: var(--text); }
+      .preview button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 12px; text-decoration: underline; padding: 0; }
+
+      .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+      .field { margin-bottom: 14px; }
+      .field .help { font-size: 11.5px; color: var(--muted); margin-top: 5px; }
+
+      .seg { display: flex; gap: 6px; }
+      .seg button {
+        flex: 1; background: var(--panel-2); border: 1px solid var(--line); color: var(--muted);
+        border-radius: 9px; padding: 8px; cursor: pointer; font: inherit; font-size: 13px; transition: all .12s;
+      }
+      .seg button.on { border-color: var(--accent-dim); color: var(--text); background: #16281d; }
+
+      .checks { display: flex; flex-direction: column; gap: 10px; }
+      .chk { display: flex; align-items: center; gap: 9px; cursor: pointer; font-size: 13.5px; color: var(--text); text-transform: none; letter-spacing: 0; font-weight: 400; }
+      .chk input { width: 16px; height: 16px; accent-color: var(--accent); }
+      .chk .cap { display: block; font-size: 12px; color: var(--muted); }
+
+      .colorwrap { display: flex; align-items: center; gap: 10px; }
+      .colorwrap input[type=color] { width: 42px; height: 38px; padding: 2px; border-radius: 9px; background: var(--panel-2); border: 1px solid var(--line); cursor: pointer; }
+
+      .generate {
+        width: 100%; margin-top: 6px; padding: 13px; border: none; border-radius: 11px;
+        background: var(--accent); color: #04140b; font: inherit; font-weight: 700; font-size: 15px;
+        cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background .15s;
+      }
+      .generate:hover { background: #33d778; }
+      .generate:disabled { opacity: .5; cursor: not-allowed; }
+
+      .result-empty { color: var(--muted); text-align: center; padding: 40px 10px; font-size: 14px; }
+      .result-empty svg { opacity: .35; margin-bottom: 10px; }
+
+      .stage {
+        background: repeating-conic-gradient(#141418 0% 25%, #101013 0% 50%) 50% / 22px 22px;
+        border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+        aspect-ratio: 1 / 1; display: grid; place-items: center; position: relative;
+      }
+      .stage iframe { width: 100%; height: 100%; border: 0; }
+      .stage .waiting { text-align: center; color: var(--muted); }
+      .spinner { width: 30px; height: 30px; border: 3px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      .status { display: flex; align-items: center; gap: 8px; font-size: 13px; margin: 14px 0 4px; }
+      .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+      .dot.pending { background: #d6a531; }
+      .dot.processing { background: #d6a531; animation: pulse 1s ease-in-out infinite; }
+      .dot.done { background: var(--accent); }
+      .dot.error { background: var(--danger); }
+      @keyframes pulse { 50% { opacity: .35; } }
+      .status .prompt { color: var(--muted); }
+
+      .actions { display: flex; gap: 10px; margin-top: 12px; }
+      .actions a, .actions button { flex: 1; text-align: center; text-decoration: none; padding: 9px; border-radius: 9px; border: 1px solid var(--line); color: var(--text); font-size: 13px; background: var(--panel-2); cursor: pointer; font-family: inherit; }
+      .actions a:hover, .actions button:hover { border-color: var(--accent-dim); }
+      .actions #exportMp4 { border-color: var(--accent-dim); color: var(--accent); }
+      .actions button:disabled { opacity: .55; cursor: default; }
+      .exportbar { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 12px; color: var(--muted); }
+      .exportbar select { width: auto; padding: 5px 8px; font-size: 12px; }
+      .exportbar .hint { margin-left: auto; }
+
+      .feed { margin-top: 22px; }
+      .feed h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 10px; }
+      .job { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); margin-bottom: 8px; cursor: pointer; transition: border-color .12s; }
+      .job:hover { border-color: var(--accent-dim); }
+      .job .jp { flex: 1; min-width: 0; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .job .jt { font-size: 11px; color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <span class="mark">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#04140b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/><path d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg>
+        </span>
+        <h1>Text-to-Lottie Studio</h1>
+      </header>
+      <p class="sub">Foto (opsiyonel) + prompt ver, ayarları seç → arkada Claude Code sahneyi üretir, oynatıcı burada canlı gösterir. Player: <a href="/" target="_blank">localhost:3030</a></p>
+
+      <div class="grid">
+        <!-- LEFT: form -->
+        <div>
+          <div class="card">
+            <div class="field">
+              <label>Görsel / SVG <span style="text-transform:none;font-weight:400;color:#6b6b73">— opsiyonel, en iyi sonuç için</span></label>
+              <div class="drop" id="drop">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
+                <div class="hint">Sürükle-bırak ya da tıkla — SVG, PNG, ekran görüntüsü, logo</div>
+                <input type="file" id="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg" />
+              </div>
+              <div class="preview" id="preview">
+                <img id="previewImg" alt="" />
+                <div>
+                  <div class="fname" id="previewName"></div>
+                  <button id="clearImg" type="button">kaldır</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Prompt</label>
+              <textarea id="prompt" placeholder="Örn: Bu SVG logoyu, doğal çizgi yönünü takip eden bir reveal ile çiz. Premium apple temalı gradyan, ease-in-out zamanlama, şeffaf arka plan."></textarea>
+              <div class="help">Motion tabiri kullan (ease-in / ease-out), kamera hareketi iste, FPS/süre belirt.</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="row">
+              <div class="field" style="margin-bottom:0">
+                <label>Proje adı</label>
+                <input type="text" id="project" value="studio" />
+              </div>
+              <div class="field" style="margin-bottom:0">
+                <label>Boyut</label>
+                <select id="size">
+                  <option value="512x512">Kare · 512×512</option>
+                  <option value="1080x1080">Kare · 1080×1080</option>
+                  <option value="1920x1080">Yatay · 1920×1080</option>
+                  <option value="1080x1920">Dikey · 1080×1920</option>
+                  <option value="800x600">4:3 · 800×600</option>
+                  <option value="custom">Özel…</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row" id="customSize" style="display:none;margin-top:12px">
+              <div><label>Genişlik</label><input type="number" id="w" value="512" min="16" /></div>
+              <div><label>Yükseklik</label><input type="number" id="h" value="512" min="16" /></div>
+            </div>
+
+            <div class="row-3" style="margin-top:14px">
+              <div><label>FPS</label><input type="number" id="fps" value="60" min="1" max="120" /></div>
+              <div><label>Kare</label><input type="number" id="frames" value="90" min="1" /></div>
+              <div>
+                <label>Süre</label>
+                <input type="text" id="dur" value="1.50 sn" readonly style="color:var(--muted)" />
+              </div>
+            </div>
+
+            <div class="field" style="margin:16px 0 0">
+              <label>Arka plan</label>
+              <div class="seg" id="bgSeg">
+                <button type="button" data-bg="transparent" class="on">Şeffaf</button>
+                <button type="button" data-bg="color">Renk</button>
+              </div>
+              <div class="colorwrap" id="colorWrap" style="display:none;margin-top:10px">
+                <input type="color" id="bgColor" value="#0b0b0d" />
+                <span style="color:var(--muted);font-size:13px" id="bgColorHex">#0b0b0d</span>
+              </div>
+            </div>
+
+            <div class="field" style="margin:18px 0 0">
+              <label>Ekstra</label>
+              <div class="checks">
+                <label class="chk"><input type="checkbox" id="loop" /> <span>Loop-uyumlu <span class="cap">baş ve son karesi dikişsiz olsun</span></span></label>
+                <label class="chk"><input type="checkbox" id="controls" /> <span>Düzenlenebilir kontroller <span class="cap">renk/hız gibi değerleri panelde slot yap</span></span></label>
+              </div>
+            </div>
+
+            <div class="field" style="margin:16px 0 0">
+              <label>Notlar <span style="text-transform:none;font-weight:400;color:#6b6b73">— opsiyonel</span></label>
+              <textarea id="notes" style="min-height:56px" placeholder="Marka rengi, referans, ton, kaçınılacak şeyler…"></textarea>
+            </div>
+          </div>
+
+          <button class="generate" id="generate">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg>
+            Üret
+          </button>
+        </div>
+
+        <!-- RIGHT: result -->
+        <div>
+          <div class="card" id="resultCard">
+            <div class="result-empty" id="resultEmpty">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="m10 8 5 3-5 3z"/></svg>
+              <div>Ürettiğin animasyon burada canlı görünecek.</div>
+            </div>
+
+            <div id="resultActive" style="display:none">
+              <div class="stage" id="stage">
+                <div class="waiting" id="waiting">
+                  <div class="spinner"></div>
+                  <div id="waitingText">Sıraya alındı…</div>
+                </div>
+              </div>
+              <div class="status">
+                <span class="dot" id="statusDot"></span>
+                <span id="statusText">—</span>
+                <span class="prompt" id="statusPrompt"></span>
+              </div>
+              <div class="actions" id="actions" style="display:none">
+                <a id="openPlayer" href="#" target="_blank">Oynatıcıda aç</a>
+                <a id="downloadJson" href="#" target="_blank">lottie.json</a>
+                <button id="exportMp4" type="button">MP4 indir</button>
+              </div>
+              <div class="exportbar" id="exportBar" style="display:none">
+                <span>MP4 arka planı:</span>
+                <select id="exportBg">
+                  <option value="ffffff">Beyaz</option>
+                  <option value="000000">Siyah</option>
+                  <option value="0b0b0d">Koyu</option>
+                  <option value="3ec6f0">Görsel mavisi</option>
+                </select>
+                <span class="hint">MP4 şeffaflık desteklemez</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="feed">
+            <h2>Son işler</h2>
+            <div id="feed"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      let imageDataUrl = null;
+      let pollTimer = null;
+      let currentScene = null; // "<project>/<scene>" of the shown result
+
+      // ---- image dropzone ----
+      const drop = $("drop"), fileInput = $("file");
+      drop.addEventListener("click", () => fileInput.click());
+      ["dragover", "dragenter"].forEach((e) => drop.addEventListener(e, (ev) => { ev.preventDefault(); drop.classList.add("over"); }));
+      ["dragleave", "drop"].forEach((e) => drop.addEventListener(e, () => drop.classList.remove("over")));
+      drop.addEventListener("drop", (ev) => { ev.preventDefault(); if (ev.dataTransfer.files[0]) loadImage(ev.dataTransfer.files[0]); });
+      fileInput.addEventListener("change", () => { if (fileInput.files[0]) loadImage(fileInput.files[0]); });
+      $("clearImg").addEventListener("click", () => { imageDataUrl = null; $("preview").classList.remove("show"); fileInput.value = ""; });
+
+      function loadImage(file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          imageDataUrl = reader.result;
+          $("previewImg").src = file.type === "image/svg+xml" ? imageDataUrl : imageDataUrl;
+          $("previewName").textContent = file.name;
+          $("preview").classList.add("show");
+        };
+        reader.readAsDataURL(file);
+      }
+
+      // ---- size preset ----
+      $("size").addEventListener("change", (e) => {
+        const v = e.target.value;
+        if (v === "custom") { $("customSize").style.display = "grid"; return; }
+        $("customSize").style.display = "none";
+        const [w, h] = v.split("x");
+        $("w").value = w; $("h").value = h;
+      });
+
+      // ---- duration readout ----
+      function updateDur() {
+        const fps = Number($("fps").value) || 60, frames = Number($("frames").value) || 0;
+        $("dur").value = (frames / fps).toFixed(2) + " sn";
+      }
+      $("fps").addEventListener("input", updateDur);
+      $("frames").addEventListener("input", updateDur);
+
+      // ---- background segmented ----
+      let bgMode = "transparent";
+      $("bgSeg").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+        $("bgSeg").querySelectorAll("button").forEach((x) => x.classList.remove("on"));
+        b.classList.add("on");
+        bgMode = b.dataset.bg;
+        $("colorWrap").style.display = bgMode === "color" ? "flex" : "none";
+      }));
+      $("bgColor").addEventListener("input", (e) => $("bgColorHex").textContent = e.target.value);
+
+      // ---- submit ----
+      $("generate").addEventListener("click", async () => {
+        const prompt = $("prompt").value.trim();
+        if (!prompt) { $("prompt").focus(); return; }
+        const options = {
+          project: $("project").value.trim() || "studio",
+          width: Number($("w").value) || 512,
+          height: Number($("h").value) || 512,
+          fps: Number($("fps").value) || 60,
+          frames: Number($("frames").value) || 90,
+          background: bgMode === "color" ? $("bgColor").value : "transparent",
+          loop: $("loop").checked,
+          controls: $("controls").checked,
+          notes: $("notes").value.trim(),
+        };
+        $("generate").disabled = true;
+        try {
+          const res = await fetch("/api/jobs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt, image: imageDataUrl, options }),
+          });
+          const job = await res.json();
+          if (!res.ok) throw new Error(job.error || "hata");
+          watch(job.id);
+          loadFeed();
+        } catch (e) {
+          alert("İş oluşturulamadı: " + e.message);
+        } finally {
+          $("generate").disabled = false;
+        }
+      });
+
+      // ---- watch a job ----
+      function watch(id) {
+        $("resultEmpty").style.display = "none";
+        $("resultActive").style.display = "block";
+        $("stage").innerHTML = '<div class="waiting" id="waiting"><div class="spinner"></div><div id="waitingText">Sıraya alındı…</div></div>';
+        $("actions").style.display = "none";
+        $("exportBar").style.display = "none";
+        currentScene = null;
+        if (pollTimer) clearInterval(pollTimer);
+        const tick = async () => {
+          let job;
+          try { job = await (await fetch("/api/jobs/" + id)).json(); } catch { return; }
+          render(job);
+          if (job.status === "done" || job.status === "error") { clearInterval(pollTimer); loadFeed(); }
+        };
+        tick();
+        pollTimer = setInterval(tick, 1500);
+      }
+
+      const STATUS_TR = { pending: "Sırada", processing: "Üretiliyor…", done: "Hazır", error: "Hata" };
+
+      function render(job) {
+        $("statusDot").className = "dot " + job.status;
+        $("statusText").textContent = STATUS_TR[job.status] || job.status;
+        $("statusPrompt").textContent = job.note ? "· " + job.note : "· " + job.prompt.slice(0, 60);
+        if (job.status === "done" && job.sceneUrl) {
+          $("stage").innerHTML = '<iframe src="' + job.sceneUrl + '" title="lottie"></iframe>';
+          $("actions").style.display = "flex";
+          $("exportBar").style.display = "flex";
+          $("openPlayer").href = job.sceneUrl;
+          $("downloadJson").href = "/projects/" + job.scene + "/lottie.json";
+          currentScene = job.scene;
+        } else if (job.status === "error") {
+          $("exportBar").style.display = "none";
+          $("stage").innerHTML = '<div class="waiting"><div style="color:var(--danger);font-size:13px">' + (job.error || "Üretim başarısız") + '</div></div>';
+        } else {
+          const txt = job.status === "processing" ? "Claude sahneyi çiziyor…" : "Sıraya alındı — Claude Code alacak";
+          const el = $("waitingText"); if (el) el.textContent = txt;
+        }
+      }
+
+      // ---- recent jobs feed ----
+      async function loadFeed() {
+        let data;
+        try { data = await (await fetch("/api/jobs")).json(); } catch { return; }
+        const feed = $("feed");
+        feed.innerHTML = "";
+        (data.jobs || []).slice(0, 12).forEach((job) => {
+          const el = document.createElement("div");
+          el.className = "job";
+          el.innerHTML =
+            '<span class="dot ' + job.status + '"></span>' +
+            '<span class="jp">' + escapeHtml(job.prompt.slice(0, 70)) + '</span>' +
+            '<span class="jt">' + STATUS_TR[job.status] + '</span>';
+          el.addEventListener("click", () => watch(job.id));
+          feed.appendChild(el);
+        });
+      }
+      function escapeHtml(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+      // ---- MP4 export ----
+      $("exportMp4").addEventListener("click", async () => {
+        if (!currentScene) return;
+        const [project, scene] = currentScene.split("/");
+        const bg = $("exportBg").value;
+        const btn = $("exportMp4");
+        const label = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = "Render ediliyor…";
+        try {
+          const q = new URLSearchParams({ project, scene, bg });
+          const res = await fetch("/api/export?" + q.toString());
+          if (!res.ok) {
+            const e = await res.json().catch(() => ({}));
+            throw new Error(e.error || ("HTTP " + res.status));
+          }
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = project + "-" + scene + ".mp4";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        } catch (e) {
+          alert("MP4 export hatası: " + e.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = label;
+        }
+      });
+
+      updateDur();
+      loadFeed();
+    </script>
+  </body>
+</html>

@@ -22,18 +22,30 @@ Upstream specs:
 - Static properties use `{ "a": 0, "k": value }`.
 - Animated properties use `{ "a": 1, "k": [keyframes] }`.
 - Keyframes must be sorted by ascending `t`.
-- Non-hold interpolation should put `o` on the start keyframe and `i` on the
-  destination keyframe; the final keyframe does not need an outgoing `o`.
+- For a non-hold segment, put both `o` and `i` on the keyframe that starts
+  that segment. They describe leaving its value and arriving at the next
+  keyframe's value. The final keyframe does not need either handle.
 - Scalar animated values use arrays in keyframes, for example `"s": [45]` for
   rotation or opacity.
 - Color values are RGB or RGBA floats in `0..1`; opacity values are `0..100`.
 - Easing handle `x` values are `0..1`; `y` values may exceed that range for
   controlled overshoot.
-- A cubic-bezier `(x1,y1,x2,y2)` splits across two keyframes: it is the
-  **outgoing** handle of the start keyframe `o:{x:[x1],y:[y1]}` and the
-  **incoming** handle of the end keyframe `i:{x:[x2],y:[y2]}`.
+- A cubic-bezier `(x1,y1,x2,y2)` uses the start keyframe's **outgoing**
+  handle `o:{x:[x1],y:[y1]}` and **incoming** handle
+  `i:{x:[x2],y:[y2]}` on that same keyframe. For example, this scalar
+  property animates from 0 to 100 over frames 0–30:
+
+  ```json
+  { "a": 1, "k": [
+    { "t": 0, "s": [0], "o": { "x": [0.2], "y": [0.75] },
+      "i": { "x": [0.34], "y": [0.94] } },
+    { "t": 30, "s": [100] }
+  ] }
+  ```
+
+  See the upstream [keyframe easing specification](https://lottie.github.io/lottie-spec/latest/specs/properties/#keyframe-easing).
 - Overshoot: prefer a short settle-back keyframe past the target; the compact
-  alternative is pushing the end `i.y` above 1. Anticipation: push the start
+  alternative is pushing the segment's `i.y` above 1. Anticipation: push the start
   `o.y` below 0.
 
 ## Layers

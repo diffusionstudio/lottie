@@ -87,8 +87,9 @@ by what it is doing this beat. Bezier is `x1,y1,x2,y2`.
 - Loop reset: match first/last velocity; use a visible reset only via
   `exit-accelerate`+cut.
 - Overshoot: small, premium-off by default. Prefer a settle-back keyframe (past
-  the target, then ease back — Skottie-safe); end `i.y` ~1.08 to 1.2 is the
-  compact alternative.
+  the target, then ease back — Skottie-safe); segment `i.y` ~1.08 to 1.2 is
+  the compact alternative. Both `i` and `o` belong to the segment's start
+  keyframe; see `lottie-spec-map.md` for the placement example.
 - Also useful: anticipate (pull slightly opposite before a fast reveal),
   steps/holds (typewriter, counters, scans, technical beats), and continuous
   linear (rotations, scanners, progress loops, mechanical seams).
